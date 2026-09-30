@@ -10,12 +10,9 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 500,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
         color: Colors.grey.shade200,
       ),
-      clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
         children: [

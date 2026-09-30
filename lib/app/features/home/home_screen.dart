@@ -1,6 +1,6 @@
-import '../feed/data/sample_products.dart';
+import 'package:stafeed/app/features/feed/feed_screen.dart';
 import 'package:flutter/material.dart';
-import '../feed/widgets/product_card.dart';
+
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -32,13 +32,14 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 24.0),
 
-            ProductCard(
-              product: sampleProducts[0],
-            ),
-            
+         
           FilledButton(
             onPressed: () {
-              // Handle button press
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const FeedScreen(),
+                ),
+              );
             },
             child: const Text('Start Exploring'),
           ),
