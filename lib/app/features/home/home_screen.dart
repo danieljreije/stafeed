@@ -1,5 +1,6 @@
 import '../feed/data/sample_products.dart';
 import 'package:flutter/material.dart';
+import '../feed/widgets/product_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -31,11 +32,10 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 24.0),
 
-          Text(
-            'Sample products:${sampleProducts.first.name}'+
-                        '${sampleProducts.first.brand}'+
-                        '${sampleProducts.first.priceInCents}',
-          ),
+            ProductCard(
+              product: sampleProducts[0],
+            ),
+            
           FilledButton(
             onPressed: () {
               // Handle button press
