@@ -2,22 +2,27 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Product product;
 
   const ProductCard({super.key, required this.product});
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  bool isSaved = false;
+
+  @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-      ),
+      decoration: BoxDecoration(color: Colors.grey.shade200),
       child: Stack(
         fit: StackFit.expand,
         children: [
           Image.network(
-            product.imageUrl,
+            widget.product.imageUrl,
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) {
@@ -51,13 +56,13 @@ class ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${product.brand} • ${product.category}",
+                  "${widget.product.brand} • ${widget.product.category}",
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
-        
+
                 const SizedBox(height: 4),
                 Text(
-                  product.name,
+                  widget.product.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -66,7 +71,7 @@ class ProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '\$${(product.priceInCents / 100).toStringAsFixed(2)}',
+                  '\$${(widget.product.priceInCents / 100).toStringAsFixed(2)}',
                   style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ],
@@ -75,9 +80,25 @@ class ProductCard extends StatelessWidget {
           Positioned(
             right: 16,
             top: 16,
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.favorite_border, color: Colors.white),
+            child: Column(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      isSaved = !isSaved;
+                      debugPrint('Building ${widget.product.name}');
+                    });
+                  },
+                  icon: Icon(
+                    isSaved ? Icons.favorite : Icons.favorite_border,
+                    color: isSaved ? Colors.red : Colors.white,
+                  ),
+                ),
+                Text(
+                  isSaved ? 'Saved' : 'Save',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
             ),
           ),
         ],
