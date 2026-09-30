@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 
-class ProductCard extends StatefulWidget {
+class ProductCard extends StatelessWidget {
   final Product product;
+  final bool isSaved;
+  final VoidCallback onSaveToggle;
 
-  const ProductCard({super.key, required this.product});
-
-  @override
-  State<ProductCard> createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<ProductCard> {
-  bool isSaved = false;
+  const ProductCard({
+    super.key,
+    required this.product,
+    required this.isSaved,
+    required this.onSaveToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class _ProductCardState extends State<ProductCard> {
         fit: StackFit.expand,
         children: [
           Image.network(
-            widget.product.imageUrl,
+            product.imageUrl,
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) {
@@ -56,13 +56,13 @@ class _ProductCardState extends State<ProductCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${widget.product.brand} • ${widget.product.category}",
+                  "${product.brand} • ${product.category}",
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
 
                 const SizedBox(height: 4),
                 Text(
-                  widget.product.name,
+                  product.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -71,7 +71,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '\$${(widget.product.priceInCents / 100).toStringAsFixed(2)}',
+                  '\$${(product.priceInCents / 100).toStringAsFixed(2)}',
                   style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ],
@@ -84,10 +84,7 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      isSaved = !isSaved;
-                      debugPrint('Building ${widget.product.name}');
-                    });
+                    onSaveToggle();
                   },
                   icon: Icon(
                     isSaved ? Icons.favorite : Icons.favorite_border,
