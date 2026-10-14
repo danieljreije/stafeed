@@ -1,0 +1,64 @@
+# Stafeed — Verified Architecture Baseline
+
+Review date: 2026-10-14
+Source: `stafeed_review.zip` supplied by the developer. This is a source inspection only; Flutter/Dart was not available in the review environment, so no build or runtime tests were executed.
+
+## Current folder layout
+
+```text
+lib/
+├── main.dart                         # ProviderScope, StafeedApp, MaterialApp
+└── app/
+    ├── stafeed_app.dart              # Empty in supplied archive
+    └── features/
+        ├── home/home_screen.dart     # Navigation to Feed / Saved
+        ├── feed/
+        │   ├── feed_screen.dart      # PageView, search field, category chips, save actions
+        │   ├── models/
+        │   │   ├── product.dart
+        │   │   ├── feed_filter.dart
+        │   │   └── paginated_products.dart
+        │   ├── data/
+        │   │   ├── product_repository.dart
+        │   │   ├── api_product_repository.dart
+        │   │   ├── fixture_product_repository.dart
+        │   │   ├── sample_products.dart
+        │   │   └── saved_products_storage.dart
+        │   ├── providers/
+        │   │   ├── products_provider.dart
+        │   │   ├── paginated_products_provider.dart
+        │   │   ├── feed_filter_provider.dart
+        │   │   └── saved_products_provider.dart
+        │   └── widgets/product_card.dart
+        └── saved/saved_screen.dart
+```
+
+## Main data flow
+
+1. `main.dart` wraps `StafeedApp` in `ProviderScope`.
+2. `HomeScreen` navigates to `FeedScreen` and `SavedScreen`.
+3. `FeedScreen` watches `paginatedProductsProvider`, `feedFilterProvider`, and `savedProductsProvider`.
+4. `PaginatedProductsNotifier` watches the filter provider and calls `productRepositoryProvider` for initial and later batches.
+5. `productRepositoryProvider` currently supplies `ApiProductRepository`, which retrieves DummyJSON data via `http.Client` and maps responses into `Product` objects. Fixture implementation exists as an alternative.
+6. `ProductCard` renders a `Product` and invokes a callback when the save button is tapped.
+7. `SavedProductsNotifier` stores a set of product IDs using `SavedProductsStorage` / `SharedPreferencesAsync`.
+8. `SavedScreen` intersects saved IDs with products from the currently loaded paginated feed.
+
+## Current limitations / required fixes
+
+- `feed_screen.dart` has a `Positioned` widget as a child of `Column` instead of as a direct child of `Stack` (invalid `ParentDataWidget` placement).
+- `feed_screen.dart` replaces all controls with an empty-state `Scaffold` when no products are returned, preventing users from switching filters in place.
+- `feed_screen.dart` uses `index == products.length - 3` rather than `>=` to trigger pagination; adjust threshold and test behavior.
+- `paginated_products_provider.dart` has a duplicate `@override` annotation before `build()`.
+- `app/stafeed_app.dart` is empty; `StafeedApp` is defined in `main.dart`. Not a build problem, but differs from the intended split.
+- `SavedScreen` only displays saved products within the current in-memory paginated product list. It does not independently resolve saved items and cannot reliably display saved items across filters or after restart.
+- The only supplied automated test (`test/widget_test.dart`) checks the home screen. Add repository, notifier, pagination and filtering tests after the UI fixes.
+- Overlays: the filter UI may cover the ProductCard save button positioned at top-right; verify on emulator/device and adjust SafeArea and button positions.
+
+## Dependencies present
+
+`flutter_riverpod`, `http`, `shared_preferences`; Flutter/Dart SDK and Flutter test tooling defined in `pubspec.yaml`.
+
+## Source-of-truth policy
+
+GitHub working tree is authoritative. For course reviews, supply a fresh source archive or the exact relevant files; do not assume earlier sample code exactly matches the working implementation.

@@ -8,7 +8,6 @@ class PaginatedProductsNotifier extends AsyncNotifier<PaginatedProducts> {
   static const int pageSize = 10;
 
   @override
-  @override
   Future<PaginatedProducts> build() async {
     final repository = ref.read(productRepositoryProvider);
     final filter = ref.watch(feedFilterProvider);

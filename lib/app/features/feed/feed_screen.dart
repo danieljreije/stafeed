@@ -59,7 +59,7 @@ class FeedScreen extends ConsumerWidget {
                     ),
                     scrollDirection: Axis.vertical,
                     onPageChanged: (index) {
-                      if (index == products.length - 3 && feedstate.hasMore) {
+                      if (index >= products.length - 3 && feedstate.hasMore) {
                         ref.read(paginatedProductsProvider.notifier).loadMore();
                       }
                     },
@@ -100,37 +100,27 @@ class FeedScreen extends ConsumerWidget {
                         ),
 
                         const SizedBox(height: 8),
-                        Positioned(
-                          top: 50,
-                          left: 12,
-                          right: 12,
-                          child: SizedBox(
-                            height: 50,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: [
-                                _categoryChip(ref, filter, 'All', null),
-                                _categoryChip(
-                                  ref,
-                                  filter,
-                                  'Shoes',
-                                  'mens-shoes',
-                                ),
-                                _categoryChip(
-                                  ref,
-                                  filter,
-                                  'Phones',
-                                  'smartphones',
-                                ),
-                                _categoryChip(ref, filter, 'Beauty', 'beauty'),
-                                _categoryChip(
-                                  ref,
-                                  filter,
-                                  'Furniture',
-                                  'furniture',
-                                ),
-                              ],
-                            ),
+                        SizedBox(
+                          height: 50,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              _categoryChip(ref, filter, 'All', null),
+                              _categoryChip(ref, filter, 'Shoes', 'mens-shoes'),
+                              _categoryChip(
+                                ref,
+                                filter,
+                                'Phones',
+                                'smartphones',
+                              ),
+                              _categoryChip(ref, filter, 'Beauty', 'beauty'),
+                              _categoryChip(
+                                ref,
+                                filter,
+                                'Furniture',
+                                'furniture',
+                              ),
+                            ],
                           ),
                         ),
                       ],
