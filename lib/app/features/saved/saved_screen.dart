@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stafeed/app/features/feed/providers/paginated_products_provider.dart';
 
-import '../feed/providers/products_provider.dart';
 import '../feed/providers/saved_products_provider.dart';
 
 class SavedScreen extends ConsumerWidget {
@@ -11,39 +10,31 @@ class SavedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch both providers
-    final productsAsync = ref.watch(productsProvider);
+    final productsAsync = ref.watch(paginatedProductsProvider);
     final savedProductsAsync = ref.watch(savedProductsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Saved'),
-      ),
+      appBar: AppBar(title: const Text('Saved')),
 
       body: productsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
 
-        error: (error, stackTrace) => Center(
-          child: Text('Failed to load products: $error'),
-        ),
+        error: (error, stackTrace) =>
+            Center(child: Text('Failed to load products: $error')),
 
-        data: (products) {
+        data: (feedState) {
+          final products = feedState.products;
+
           if (products.isEmpty) {
-            return const Center(
-              child: Text('No products available.'),
-            );
+            return const Center(child: Text('No products available.'));
           }
 
           // Products loaded. Now check saved IDs.
           return savedProductsAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
 
-            error: (error, stackTrace) => Center(
-              child: Text('Could not load saved products: $error'),
-            ),
+            error: (error, stackTrace) =>
+                Center(child: Text('Could not load saved products: $error')),
 
             data: (savedIds) {
               // Only keep products whose IDs are saved
