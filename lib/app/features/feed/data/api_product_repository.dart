@@ -11,10 +11,28 @@ class ApiProductRepository implements ProductRepository {
   ApiProductRepository(this._client);
 
   @override
-  Future<List<Product>> getProducts({int limit = 10, int skip = 0}) async {
-    final url = Uri.https('dummyjson.com', '/products', {
-      'limit': '$limit',
-      'skip': '$skip',
+  Future<List<Product>> getProducts({
+    int limit = 10,
+    int skip = 0,
+    String? category,
+    String? query,
+  }) async {
+    final searchTerm = query?.trim() ?? '';
+
+    final String path;
+
+    if (searchTerm.isNotEmpty) {
+      path = '/products/search';
+    } else if (category != null) {
+      path = '/products/category/$category';
+    } else {
+      path = '/products';
+    }
+
+    final url = Uri.https('dummyjson.com', path, {
+      'limit': limit.toString(),
+      'skip': skip.toString(),
+      if (searchTerm.isNotEmpty) 'q': searchTerm,
     });
 
     final response = await _client

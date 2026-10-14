@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'widgets/product_card.dart';
 import 'providers/saved_products_provider.dart';
 import 'providers/paginated_products_provider.dart';
+import 'providers/feed_filter_provider.dart';
+import 'models/feed_filter.dart';
 
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
@@ -12,7 +14,7 @@ class FeedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final savedProducts = ref.watch(savedProductsProvider);
     final productsAsync = ref.watch(paginatedProductsProvider);
-
+    final filter = ref.watch(feedFilterProvider);
     return productsAsync.when(
       loading: () {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -52,12 +54,15 @@ class FeedScreen extends ConsumerWidget {
               body: Stack(
                 children: [
                   PageView.builder(
+                    key: ValueKey(
+                      '${filter.category ?? 'all'}:${filter.query}',
+                    ),
+                    scrollDirection: Axis.vertical,
                     onPageChanged: (index) {
                       if (index == products.length - 3 && feedstate.hasMore) {
                         ref.read(paginatedProductsProvider.notifier).loadMore();
                       }
                     },
-                    scrollDirection: Axis.vertical,
                     itemCount: products.length,
                     itemBuilder: (context, index) {
                       final product = products[index];
@@ -73,6 +78,65 @@ class FeedScreen extends ConsumerWidget {
                       );
                     },
                   ),
+                  SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          key: ValueKey('${filter.category}:${filter.query}'),
+                          initialValue: filter.query,
+                          textInputAction: TextInputAction.search,
+                          decoration: const InputDecoration(
+                            hintText: 'Search products...',
+                            filled: true,
+                            fillColor: Colors.white,
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onFieldSubmitted: (value) {
+                            ref
+                                .read(feedFilterProvider.notifier)
+                                .setSearch(value);
+                          },
+                        ),
+
+                        const SizedBox(height: 8),
+                        Positioned(
+                          top: 50,
+                          left: 12,
+                          right: 12,
+                          child: SizedBox(
+                            height: 50,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                _categoryChip(ref, filter, 'All', null),
+                                _categoryChip(
+                                  ref,
+                                  filter,
+                                  'Shoes',
+                                  'mens-shoes',
+                                ),
+                                _categoryChip(
+                                  ref,
+                                  filter,
+                                  'Phones',
+                                  'smartphones',
+                                ),
+                                _categoryChip(ref, filter, 'Beauty', 'beauty'),
+                                _categoryChip(
+                                  ref,
+                                  filter,
+                                  'Furniture',
+                                  'furniture',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Layer 2: Loading indicator
                   if (feedstate.isLoadingMore)
                     const Positioned(
@@ -101,6 +165,24 @@ class FeedScreen extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _categoryChip(
+    WidgetRef ref,
+    FeedFilter filter,
+    String label,
+    String? category,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: filter.category == category && filter.query.isEmpty,
+        onSelected: (_) {
+          ref.read(feedFilterProvider.notifier).setCategory(category);
+        },
+      ),
     );
   }
 }
