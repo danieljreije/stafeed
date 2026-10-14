@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'widgets/product_card.dart';
-import 'data/saved_products_storage.dart';
 import 'providers/saved_products_provider.dart';
 import 'providers/products_provider.dart';
 
