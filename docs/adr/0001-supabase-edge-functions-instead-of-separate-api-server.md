@@ -1,0 +1,3 @@
+# Supabase Edge Functions instead of a separate API server
+
+The product spec suggests a small Node/TypeScript (Fastify) API alongside Supabase. We chose to run the API as Supabase Edge Functions instead, with migrations and functions together under `supabase/` beside the Flutter app at the repo root. For a solo, pre-launch product this means one platform, one deploy, and a free tier, with the same TypeScript and the same endpoints. Inventory providers (Fixtures, Shopify Catalog, Awin) sit behind one adapter interface inside the functions, so moving to a standalone server later stays a contained change.
