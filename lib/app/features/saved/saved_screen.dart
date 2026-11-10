@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stafeed/app/features/feed/providers/paginated_products_provider.dart';
+import 'package:stafeed/app/features/feed/providers/feed_provider.dart';
 
 import '../feed/providers/saved_products_provider.dart';
 
@@ -10,7 +10,7 @@ class SavedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch both providers
-    final productsAsync = ref.watch(paginatedProductsProvider);
+    final productsAsync = ref.watch(feedProvider);
     final savedProductsAsync = ref.watch(savedProductsProvider);
 
     return Scaffold(
@@ -23,7 +23,7 @@ class SavedScreen extends ConsumerWidget {
             Center(child: Text('Failed to load products: $error')),
 
         data: (feedState) {
-          final products = feedState.products;
+          final products = [for (final item in feedState.items) item.product];
 
           if (products.isEmpty) {
             return const Center(child: Text('No products available.'));
@@ -54,13 +54,15 @@ class SavedScreen extends ConsumerWidget {
                   final product = savedProductsList[index];
 
                   return ListTile(
-                    leading: Image.network(
-                      product.imageUrl,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                    title: Text(product.name),
+                    leading: product.imageUrls.isEmpty
+                        ? null
+                        : Image.network(
+                            product.imageUrls.first,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                          ),
+                    title: Text(product.title),
                     subtitle: Text(product.brand),
                     trailing: IconButton(
                       icon: const Icon(Icons.favorite),

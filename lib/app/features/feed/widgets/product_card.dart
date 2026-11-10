@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
 
-import '../models/product.dart';
+import '../models/feed_item.dart';
 
 class ProductCard extends StatelessWidget {
-  final Product product;
+  final FeedItem item;
   final bool isSaved;
   final VoidCallback onSaveToggle;
 
   const ProductCard({
     super.key,
-    required this.product,
+    required this.item,
     required this.isSaved,
     required this.onSaveToggle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final product = item.product;
+    final offer = item.offer;
+
     return Container(
       decoration: BoxDecoration(color: Colors.grey.shade200),
       child: Stack(
         fit: StackFit.expand,
         children: [
+          if (product.imageUrls.isEmpty)
+            const Center(child: Icon(Icons.image_not_supported_outlined, size: 48))
+          else
           Image.network(
-            product.imageUrl,
+            product.imageUrls.first,
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) {
@@ -56,13 +62,13 @@ class ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${product.brand} • ${product.category}",
+                  "${product.brand} • ${offer.merchant}",
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
 
                 const SizedBox(height: 4),
                 Text(
-                  product.name,
+                  product.title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -71,7 +77,7 @@ class ProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '\$${(product.priceInCents / 100).toStringAsFixed(2)}',
+                  offer.price.format(),
                   style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ],

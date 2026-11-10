@@ -6,7 +6,7 @@ Flutter + Riverpod app: a vertical, swipeable shopping-discovery feed. Stafeed h
 - Current status: `PROJECT_STATUS.md`
 - Code lives under `lib/app/features/`. Keep that feature-first layout.
 - Never put secret keys (Shopify, Awin, Supabase service role) in the app.
-- Label demo data honestly: DummyJSON and fixtures are not real commercial inventory.
+- Label demo data honestly: Fixtures are not real commercial inventory, and the app shows a "sample data" marker when it runs on them.
 
 ## Agent skills
 

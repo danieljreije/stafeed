@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'widgets/product_card.dart';
-import 'providers/saved_products_provider.dart';
-import 'providers/paginated_products_provider.dart';
-import 'providers/feed_filter_provider.dart';
 import 'models/feed_filter.dart';
+import 'models/supported_filters.dart';
+import 'providers/data_gateway_provider.dart';
+import 'providers/feed_filter_provider.dart';
+import 'providers/feed_provider.dart';
+import 'providers/saved_products_provider.dart';
 import 'widgets/feed_search_field.dart';
+import 'widgets/product_card.dart';
+import 'widgets/sample_data_marker.dart';
 
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
@@ -14,20 +17,24 @@ class FeedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final savedProducts = ref.watch(savedProductsProvider);
-    final productsAsync = ref.watch(paginatedProductsProvider);
+    final feedAsync = ref.watch(feedProvider);
     final filter = ref.watch(feedFilterProvider);
+    final categories =
+        ref.watch(supportedFiltersProvider).asData?.value.categories ??
+        const <ProductCategory>[];
+    final servesSampleData = ref.watch(dataGatewayProvider).servesSampleData;
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(
-            child: productsAsync.when(
+            child: feedAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stackTrace) =>
                   Center(child: Text('Failed to load products: $error')),
               data: (feedState) {
-                final products = feedState.products;
+                final items = feedState.items;
 
-                if (products.isEmpty) {
+                if (items.isEmpty) {
                   return const Scaffold(
                     body: Center(child: Text('No products available.')),
                   );
@@ -57,24 +64,26 @@ class FeedScreen extends ConsumerWidget {
                             ),
                             scrollDirection: Axis.vertical,
                             onPageChanged: (index) {
-                              if (index >= products.length - 3 &&
+                              if (index >= items.length - 3 &&
                                   feedState.hasMore) {
                                 ref
-                                    .read(paginatedProductsProvider.notifier)
+                                    .read(feedProvider.notifier)
                                     .loadMore();
                               }
                             },
-                            itemCount: products.length,
+                            itemCount: items.length,
                             itemBuilder: (context, index) {
-                              final product = products[index];
+                              final item = items[index];
 
                               return ProductCard(
-                                product: product,
-                                isSaved: savedProductIds.contains(product.id),
+                                item: item,
+                                isSaved: savedProductIds.contains(
+                                  item.product.id,
+                                ),
                                 onSaveToggle: () {
                                   ref
                                       .read(savedProductsProvider.notifier)
-                                      .toggleProduct(product.id);
+                                      .toggleProduct(item.product.id);
                                 },
                               );
                             },
@@ -94,33 +103,21 @@ class FeedScreen extends ConsumerWidget {
                                       scrollDirection: Axis.horizontal,
                                       children: [
                                         _categoryChip(ref, filter, 'All', null),
-                                        _categoryChip(
-                                          ref,
-                                          filter,
-                                          'Shoes',
-                                          'mens-shoes',
-                                        ),
-                                        _categoryChip(
-                                          ref,
-                                          filter,
-                                          'Phones',
-                                          'smartphones',
-                                        ),
-                                        _categoryChip(
-                                          ref,
-                                          filter,
-                                          'Beauty',
-                                          'beauty',
-                                        ),
-                                        _categoryChip(
-                                          ref,
-                                          filter,
-                                          'Furniture',
-                                          'furniture',
-                                        ),
+                                        for (final category in categories)
+                                          _categoryChip(
+                                            ref,
+                                            filter,
+                                            category.label,
+                                            category.id,
+                                          ),
                                       ],
                                     ),
                                   ),
+                                  if (servesSampleData)
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: SampleDataMarker(),
+                                    ),
                                 ],
                               ),
                             ),
@@ -142,7 +139,7 @@ class FeedScreen extends ConsumerWidget {
                               child: FilledButton(
                                 onPressed: () {
                                   ref
-                                      .read(paginatedProductsProvider.notifier)
+                                      .read(feedProvider.notifier)
                                       .loadMore();
                                 },
                                 child: const Text('Retry loading'),
