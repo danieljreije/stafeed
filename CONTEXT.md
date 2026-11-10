@@ -1,6 +1,6 @@
 # Stafeed
 
-A vertical, swipeable feed made entirely of ads, and openly proud of it. Every Feed Item is something a merchant pays for; Shoppers come for the fun and for finding things to buy, and are sent to the Merchant to purchase. Stafeed never sells or takes payment.
+A vertical, swipeable feed made of ads, and openly proud of it. For You is entirely Ads; Shoppers come for the fun and for finding things to buy, and are sent to the Merchant to purchase. Stafeed never sells or takes payment.
 
 ## Language
 
@@ -26,7 +26,7 @@ A hand-made, clearly-labelled sample Product used when no real inventory source 
 _Avoid_: Mock, dummy, fake product
 
 **Ad**:
-Any Feed Item. Every Feed Item earns money for Stafeed (Brand Ad, affiliate commission, or pay-per-click), so every one is an Ad and is labelled AD. Something that earns nothing is never shown.
+A Feed Item that earns money for Stafeed (Brand Ad, affiliate commission, or pay-per-click), labelled AD. Every Feed Item in For You is an Ad.
 _Avoid_: Promotion, listing, organic result
 
 **Brand Ad**:
@@ -40,6 +40,10 @@ _Avoid_: Promoted, boosted
 **Affiliate Ad**:
 An Ad for a Product from an affiliate or pay-per-click source, where Stafeed earns on click or purchase.
 _Avoid_: Organic product, catalog item
+
+**Not an Ad**:
+A Feed Item for a Product that earns Stafeed nothing, shown only inside a Shopping Session to fill gaps when Ads run thin, and labelled as such.
+_Avoid_: Organic result, free listing
 
 ### Feed
 
