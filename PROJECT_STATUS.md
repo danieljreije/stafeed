@@ -1,32 +1,25 @@
 # Stafeed — Project Status
 
-_Last updated: 2026-11-07_
+_Last updated: 2026-11-10_ · "Stafeed" is a working name.
 
-Spec: `docs/STAFEED_PRODUCT_SPEC.md` · Plan: `docs/STAFEED_ROADMAP.md`
+- Spec: [#1](https://github.com/danieljreije/stafeed/issues/1) — tickets are its sub-issues (#2–#30), with native "blocked by" links
+- Glossary: `CONTEXT.md` · Decisions: `docs/adr/` · Background vision: `docs/STAFEED_PRODUCT_SPEC.md`
+- Superseded by the spec: `docs/STAFEED_ROADMAP.md` (kept for history)
 
-## Current milestone
-**M1 — Reliable fixture feed** (not started)
-
-## Completed
-- Prototype: vertical PageView feed, product card, debounced search, category chips, offset pagination with retry, saved IDs persisted locally.
-- Repository audit and roadmap written (code reading only).
-
-## Blocked / needs you
-- Shopify Global Catalog MCP access (agent profile / eligibility): not applied — blocks real inventory.
-- Awin publisher approval: not applied — blocks affiliate inventory and revenue.
-- Launch country/currency: undecided.
+## Start now (no blockers)
+| Ticket | Who |
+|---|---|
+| #2 — 01 Data gateway + Fixtures | Local agent (Flutter) |
+| #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
+| #15 — 14 Backend first slice | Cloud agent |
+| #26 — 25 Research: pay-per-click networks | Cloud agent |
+| #14 — 13 Create Supabase project | You |
+| #24 — 23 Apply to Awin; launch country | You |
+| #27 — 26 Apply for Shopify Catalog access | You |
+| #30 — 29 Final name & store IDs | You (before first store upload) |
 
 ## Not yet verified
-- `flutter analyze`, `flutter test`, Android build: NOT RUN.
-- Git status/history: not inspected.
+- `flutter analyze`, `flutter test`, Android build: not run since the course prototype.
 
-## Data sources
-| Source | Status |
-|---|---|
-| Fixtures | Present but unusable (3 items, mismatched categories) — fix in M1 |
-| DummyJSON | Active default — **demo data only**, not commercial inventory |
-| Shopify Catalog MCP | Not integrated — access unverified |
-| Awin feeds | Not integrated — access unverified |
-
-## Remaining (ordered)
-M1 fixture feed → M2 product actions & saved snapshots → M3 app shell & onboarding → M4 sessions, events, ranking → M5 backend (Supabase) → M7 Android beta. M6 provider access runs in parallel.
+## Launch country
+Undecided (decided in #24 based on Awin approvals).
