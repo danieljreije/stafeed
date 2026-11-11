@@ -37,9 +37,6 @@ void main() {
 
   test('equality ignores the case of the currency code', () {
     expect(const Money(100, 'usd'), const Money(100, 'USD'));
-    expect(
-      const Money(100, 'usd').hashCode,
-      const Money(100, 'USD').hashCode,
-    );
+    expect(const Money(100, 'usd').hashCode, const Money(100, 'USD').hashCode);
   });
 }
