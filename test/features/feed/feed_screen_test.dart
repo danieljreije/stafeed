@@ -62,4 +62,20 @@ void main() {
 
     expect(find.text(watchesPage.items.first.product.title), findsOneWidget);
   });
+
+  testWidgets(
+    'a search with no matches keeps the search box, chips and marker',
+    (tester) async {
+      await pumpFeed(tester);
+
+      await tester.enterText(find.byType(TextField), 'zzz no such thing');
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No products available.'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
+      expect(find.textContaining('Sample data'), findsOneWidget);
+    },
+  );
 }

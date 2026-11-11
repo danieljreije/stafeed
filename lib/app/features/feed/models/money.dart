@@ -54,10 +54,10 @@ class Money {
   bool operator ==(Object other) =>
       other is Money &&
       other.minorUnits == minorUnits &&
-      other.currencyCode == currencyCode;
+      other.currencyCode.toUpperCase() == currencyCode.toUpperCase();
 
   @override
-  int get hashCode => Object.hash(minorUnits, currencyCode);
+  int get hashCode => Object.hash(minorUnits, currencyCode.toUpperCase());
 
   @override
   String toString() => 'Money($minorUnits $currencyCode)';

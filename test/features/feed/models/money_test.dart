@@ -34,4 +34,12 @@ void main() {
     expect(const Money(100, 'USD'), const Money(100, 'USD'));
     expect(const Money(100, 'USD'), isNot(const Money(100, 'GBP')));
   });
+
+  test('equality ignores the case of the currency code', () {
+    expect(const Money(100, 'usd'), const Money(100, 'USD'));
+    expect(
+      const Money(100, 'usd').hashCode,
+      const Money(100, 'USD').hashCode,
+    );
+  });
 }
