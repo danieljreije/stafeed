@@ -20,8 +20,9 @@ void main() {
         InMemorySharedPreferencesAsync.empty();
   });
 
-  testWidgets('shows the first Fixture with its price in its own currency',
-      (tester) async {
+  testWidgets('shows the first Fixture with its price in its own currency', (
+    tester,
+  ) async {
     final firstPage = await FixtureDataGateway().getFeedPage();
     final first = firstPage.items.first;
 
@@ -59,9 +60,6 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'Watches'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text(watchesPage.items.first.product.title),
-      findsOneWidget,
-    );
+    expect(find.text(watchesPage.items.first.product.title), findsOneWidget);
   });
 }

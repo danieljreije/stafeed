@@ -12,10 +12,7 @@ class SavedProductsStorage {
   }
 
   Future<void> saveProductIds(Set<String> ids) async {
-    await _prefs.setStringList(
-      _savedProductsKey,
-      ids.toList(),
-    );
+    await _prefs.setStringList(_savedProductsKey, ids.toList());
   }
 
   Future<void> clearSavedProducts() async {

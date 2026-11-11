@@ -25,24 +25,26 @@ class ProductCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           if (product.imageUrls.isEmpty)
-            const Center(child: Icon(Icons.image_not_supported_outlined, size: 48))
+            const Center(
+              child: Icon(Icons.image_not_supported_outlined, size: 48),
+            )
           else
-          Image.network(
-            product.imageUrls.first,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                return child;
-              }
+            Image.network(
+              product.imageUrls.first,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                }
 
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return const Center(
-                child: Icon(Icons.broken_image_outlined, size: 48),
-              );
-            },
-          ),
+                return const Center(child: CircularProgressIndicator());
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const Center(
+                  child: Icon(Icons.broken_image_outlined, size: 48),
+                );
+              },
+            ),
           const Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(

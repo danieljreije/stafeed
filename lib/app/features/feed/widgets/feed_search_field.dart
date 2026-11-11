@@ -10,8 +10,7 @@ class FeedSearchField extends ConsumerStatefulWidget {
   const FeedSearchField({super.key});
 
   @override
-  ConsumerState<FeedSearchField> createState() =>
-      _FeedSearchFieldState();
+  ConsumerState<FeedSearchField> createState() => _FeedSearchFieldState();
 }
 
 class _FeedSearchFieldState extends ConsumerState<FeedSearchField> {
@@ -32,14 +31,11 @@ class _FeedSearchFieldState extends ConsumerState<FeedSearchField> {
     _debounce?.cancel();
 
     // Schedule a new search.
-    _debounce = Timer(
-      const Duration(milliseconds: 500),
-      () {
-        if (!mounted) return;
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
 
-        ref.read(feedFilterProvider.notifier).setSearch(value);
-      },
-    );
+      ref.read(feedFilterProvider.notifier).setSearch(value);
+    });
   }
 
   @override
@@ -52,9 +48,7 @@ class _FeedSearchFieldState extends ConsumerState<FeedSearchField> {
 
         _controller.value = TextEditingValue(
           text: next.query,
-          selection: TextSelection.collapsed(
-            offset: next.query.length,
-          ),
+          selection: TextSelection.collapsed(offset: next.query.length),
         );
       }
     });
@@ -75,9 +69,7 @@ class _FeedSearchFieldState extends ConsumerState<FeedSearchField> {
         prefixIcon: const Icon(Icons.search),
         filled: true,
         fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

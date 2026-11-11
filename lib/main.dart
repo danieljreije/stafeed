@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'app/features/home/home_screen.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: StafeedApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: StafeedApp()));
 }
 
 class StafeedApp extends StatelessWidget {
@@ -18,7 +16,7 @@ class StafeedApp extends StatelessWidget {
     return MaterialApp(
       title: 'Stafeed',
       home: const HomeScreen(),
-       debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

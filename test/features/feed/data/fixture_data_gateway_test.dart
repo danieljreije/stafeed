@@ -36,44 +36,50 @@ void main() {
   });
 
   group('Fixtures', () {
-    test('cover about 56 Products across sneakers and 4 other categories',
-        () async {
-      final filters = await gateway.getSupportedFilters();
-      final categoryIds = filters.categories.map((c) => c.id).toList();
+    test(
+      'cover about 56 Products across sneakers and 4 other categories',
+      () async {
+        final filters = await gateway.getSupportedFilters();
+        final categoryIds = filters.categories.map((c) => c.id).toList();
 
-      expect(categoryIds, [
-        'sneakers',
-        'bags',
-        'watches',
-        'tech-accessories',
-        'home-decor',
-      ]);
-      expect(filters.categories.first.label, 'Sneakers');
-    });
+        expect(categoryIds, [
+          'sneakers',
+          'bags',
+          'watches',
+          'tech-accessories',
+          'home-decor',
+        ]);
+        expect(filters.categories.first.label, 'Sneakers');
+      },
+    );
 
-    test('have at least 8 Brands, two currencies and varied ships-to countries',
-        () async {
-      final items = await readWholeFeed(gateway);
+    test(
+      'have at least 8 Brands, two currencies and varied ships-to countries',
+      () async {
+        final items = await readWholeFeed(gateway);
 
-      final brands = items.map((i) => i.product.brand).toSet();
-      final currencies = items.map((i) => i.offer.price.currencyCode).toSet();
-      final shipsTo = items.map((i) => i.offer.shipsTo).toSet();
+        final brands = items.map((i) => i.product.brand).toSet();
+        final currencies = items.map((i) => i.offer.price.currencyCode).toSet();
+        final shipsTo = items.map((i) => i.offer.shipsTo).toSet();
 
-      expect(brands.length, greaterThanOrEqualTo(8));
-      expect(currencies, {'USD', 'GBP'});
-      expect(shipsTo.length, greaterThan(1));
-    });
+        expect(brands.length, greaterThanOrEqualTo(8));
+        expect(currencies, {'USD', 'GBP'});
+        expect(shipsTo.length, greaterThan(1));
+      },
+    );
   });
 
   group('For You feed', () {
-    test('first page is a full page of Ads with a cursor to the next page',
-        () async {
-      final page = await gateway.getFeedPage();
+    test(
+      'first page is a full page of Ads with a cursor to the next page',
+      () async {
+        final page = await gateway.getFeedPage();
 
-      expect(page.items, hasLength(FixtureDataGateway.defaultPageSize));
-      expect(page.items.every((item) => item.isAd), isTrue);
-      expect(page.nextCursor, isNotNull);
-    });
+        expect(page.items, hasLength(FixtureDataGateway.defaultPageSize));
+        expect(page.items.every((item) => item.isAd), isTrue);
+        expect(page.nextCursor, isNotNull);
+      },
+    );
 
     test('pages through every Ad exactly once, then ends', () async {
       final items = await readWholeFeed(gateway);
@@ -129,9 +135,9 @@ void main() {
 
       expect(
         [...firstPage.items, ...secondPage.items].map((i) => i.product.id),
-        whole.take(firstPage.items.length + secondPage.items.length).map(
-              (i) => i.product.id,
-            ),
+        whole
+            .take(firstPage.items.length + secondPage.items.length)
+            .map((i) => i.product.id),
       );
     });
   });

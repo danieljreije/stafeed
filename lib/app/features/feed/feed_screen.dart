@@ -66,9 +66,7 @@ class FeedScreen extends ConsumerWidget {
                             onPageChanged: (index) {
                               if (index >= items.length - 3 &&
                                   feedState.hasMore) {
-                                ref
-                                    .read(feedProvider.notifier)
-                                    .loadMore();
+                                ref.read(feedProvider.notifier).loadMore();
                               }
                             },
                             itemCount: items.length,
@@ -138,9 +136,7 @@ class FeedScreen extends ConsumerWidget {
                               left: 20,
                               child: FilledButton(
                                 onPressed: () {
-                                  ref
-                                      .read(feedProvider.notifier)
-                                      .loadMore();
+                                  ref.read(feedProvider.notifier).loadMore();
                                 },
                                 child: const Text('Retry loading'),
                               ),

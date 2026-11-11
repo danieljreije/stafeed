@@ -21,7 +21,6 @@ class FeedFilterNotifier extends Notifier<FeedFilter> {
   }
 }
 
-final feedFilterProvider =
-    NotifierProvider<FeedFilterNotifier, FeedFilter>(
+final feedFilterProvider = NotifierProvider<FeedFilterNotifier, FeedFilter>(
   FeedFilterNotifier.new,
 );

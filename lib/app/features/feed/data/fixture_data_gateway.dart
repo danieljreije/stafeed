@@ -18,8 +18,8 @@ class FixtureDataGateway implements DataGateway {
     List<Product>? products,
     List<ProductCategory>? categories,
     this.pageSize = defaultPageSize,
-  })  : _products = products ?? fixtureProducts,
-        _categories = categories ?? fixtureCategories;
+  }) : _products = products ?? fixtureProducts,
+       _categories = categories ?? fixtureCategories;
 
   static const int defaultPageSize = 10;
   static const String _cursorPrefix = 'fx1.';
@@ -58,8 +58,7 @@ class FixtureDataGateway implements DataGateway {
 
     return FeedPage(
       items: items,
-      nextCursor:
-          end < matches.length ? _writeCursor(end, fingerprint) : null,
+      nextCursor: end < matches.length ? _writeCursor(end, fingerprint) : null,
     );
   }
 
