@@ -1,0 +1,93 @@
+# Update goldens (ticket #35): regenerates the golden (screenshot) images on
+# Linux and commits them to a PR branch, for when a UI change is intended.
+#
+# Two ways to start it:
+#   - Add the label "update goldens" to the PR (easiest; agents can do this
+#     too). The label is removed again when the run finishes.
+#   - GitHub > Actions > "Update goldens" > Run workflow, and pick the PR
+#     branch under "Use workflow from".
+# Then look at the new images in the PR's "Files changed" before merging.
+name: Update goldens
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write # push the new images to the branch
+  actions: write # re-run CI on the new commit
+  pull-requests: write # remove the label again
+
+concurrency:
+  group: update-goldens-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: update goldens
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'update goldens' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+    steps:
+      - name: refuse to run on main
+        if: ${{ env.BRANCH == 'main' || env.BRANCH == 'master' }}
+        run: |
+          echo "::error::Run this on a PR branch, not on $BRANCH."
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+
+      # Same Flutter as the CI check, so the images match what CI compares.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - run: flutter pub get
+
+      # Start from no images, so ones for renamed or removed tests go away.
+      - name: regenerate golden images
+        run: |
+          find test -path '*/goldens/*.png' -delete
+          flutter test --tags golden --update-goldens
+
+      - name: commit and push the images
+        id: commit
+        run: |
+          git add -A -- 'test/**/goldens/*.png'
+          if git diff --cached --quiet; then
+            echo "Golden images already up to date; nothing to commit."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test: update golden images"
+          # Someone may have pushed to the branch meanwhile; go on top of it.
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # Commits pushed by this workflow do not start the PR checks by
+      # themselves (a GitHub rule), so start CI on the new commit here.
+      - name: re-run CI on the new commit
+        if: ${{ steps.commit.outputs.pushed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+
+      - name: remove the "update goldens" label
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh api -X DELETE
+          "repos/$GITHUB_REPOSITORY/issues/${{ github.event.pull_request.number }}/labels/update%20goldens"
+          || true
