@@ -1,6 +1,6 @@
 # Stafeed — Project Status
 
-_Last updated: 2026-11-11_ · "Stafeed" is a working name.
+_Last updated: 2026-11-13_ · "Stafeed" is a working name.
 
 - Spec: [#1](https://github.com/danieljreije/stafeed/issues/1) — tickets are its sub-issues (#2–#30), with native "blocked by" links
 - Glossary: `CONTEXT.md` · Decisions: `docs/adr/` · Background vision: `docs/STAFEED_PRODUCT_SPEC.md`
@@ -29,6 +29,13 @@ _Last updated: 2026-11-11_ · "Stafeed" is a working name.
 - Steps inside that check: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Analyze and test still run when format fails, so one run reports every problem.
 - Proven 2026-11-12: green on PR #46 ([run](https://github.com/danieljreije/stafeed/actions/runs/43303624382)); red on deliberately broken PR #47 (format error + failing test, both caught; [run](https://github.com/danieljreije/stafeed/actions/runs/43303652959)), closed unmerged.
 - Later gate tickets (#35 goldens, #36 web end-to-end) add their own check names here.
+
+## Orchestrator (#38, dry run only)
+- Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it in a worktree off `main`, opens a PR, follows CI, gives up after two red attempts or any permission block (comment, unassign, `ready-for-human`, push notification). It never weakens or deletes a test to get green.
+- Scheduled task: `stafeed-orchestrator`, prompt in `docs/agents/orchestrator-scheduled-task.md`. Dry run, no schedule (run by hand). Goes live every two hours in #41.
+- Permissions: `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh` in auto mode and disables bypass-permissions.
+- **Pause the loop:** Claude desktop app → Scheduled → `Stafeed orchestrator` → switch off.
+- Known: PRs merged into `main` don't auto-close their ticket while GitHub's default branch is `master` (#32 and #34 are merged but still open, which keeps #35–#37 and #42 "blocked"). The run prompt reports these as "done but still open"; a live run closes them.
 
 ## Verification
 - `dart format`, `flutter analyze` (no issues), `flutter test` (33/33): passing on Windows as of #2.
