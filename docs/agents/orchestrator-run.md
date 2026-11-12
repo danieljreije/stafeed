@@ -16,7 +16,7 @@ The scheduled task's own prompt overrides this line: it says `DRY_RUN = true` or
 ## Ground rules (both modes)
 
 - Read `CLAUDE.md`, `CONTEXT.md`, `PROJECT_STATUS.md`, `docs/agents/*.md` and the ADRs in `docs/adr/` before acting. Use the glossary's words.
-- `gh` may not be on `PATH`; on the owner's PC it is `"/c/Program Files/GitHub CLI/gh.exe"`. If GraphQL is blocked, use the REST forms in `docs/agents/issue-tracker.md`. Repo: `danieljreije/stafeed`. All work targets `main` (GitHub's default branch may still be `master`; never use it).
+- `gh` may not be on `PATH`; on the owner's PC it is `"/c/Program Files/GitHub CLI/gh.exe"`. If GraphQL is blocked, use the REST forms in `docs/agents/issue-tracker.md`. Repo: `danieljreije/stafeed`. All work targets `main`.
 - Run shell commands with the Bash tool so the project allowlist in `.claude/settings.json` applies (`flutter`, `dart`, `git`, `gh`). The session runs in auto mode; never bypass-permissions.
 - **Never weaken, skip or delete a test to get green.** The test suite is the definition of done (ADR-0003). That includes golden images: update a golden only when the ticket asks for that UI change, and only through the "update goldens" workflow.
 - If a command you need is blocked by permissions, do not work around it: take the give-up path below.
@@ -100,7 +100,7 @@ Push the branch and open a PR to `main`:
 - Title ends with `(#<n>)`.
 - Body: what was built, what was tested, preview link if one exists, `Closes #<n>`, and the line `Opened by the Stafeed orchestrator`.
 
-Enable auto-merge (`gh pr merge <pr> --auto --squash`) once branch protection exists (#37). Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log, fix the cause in the same worktree, push. When the PR merges, close the ticket with a comment naming the PR (the `Closes` keyword does not fire while GitHub's default branch is `master`).
+Enable auto-merge (`gh pr merge <pr> --auto --merge`); branch protection (#37) merges it once every required check is green. Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log, fix the cause in the same worktree, push. When the PR merges, check the ticket closed (`Closes #<n>` does it); if not, close it with a comment naming the PR.
 
 ## Give-up path
 
