@@ -33,7 +33,7 @@ import 'package:stafeed/app/features/feed/providers/data_gateway_provider.dart';
 import 'package:stafeed/main.dart';
 
 /// Goldens only run on Linux; see the note at the top of this file.
-final bool _notLinux = !Platform.isLinux;
+final bool _isLinux = Platform.isLinux;
 
 /// A phone-sized screen, kept small so the images stay light.
 const _screenSize = Size(390, 844);
@@ -46,7 +46,7 @@ final _feedItemKinds = <String, bool Function(FeedItem)>{
 
 void main() {
   setUpAll(() async {
-    if (!_notLinux) await _loadRealFonts();
+    if (_isLinux) await _loadRealFonts();
   });
 
   setUp(() {
@@ -56,11 +56,16 @@ void main() {
 
   group('Feed Item kinds', () {
     for (final MapEntry(key: name, value: isKind) in _feedItemKinds.entries) {
-      testWidgets(name, skip: _notLinux, (tester) async {
+      testWidgets(name, skip: !_isLinux, (tester) async {
         final item = (await FixtureDataGateway().getFeedPage()).items
             .firstWhere(isKind);
 
-        await _openFeed(tester, _OneItemGateway(item));
+        await _openFeed(
+          tester,
+          _FakeGateway(
+            page: Future.value(FeedPage(items: [item], nextCursor: null)),
+          ),
+        );
         await tester.pumpAndSettle();
 
         await expectLater(
@@ -72,8 +77,8 @@ void main() {
   });
 
   group('Feed states', () {
-    testWidgets('loading', skip: _notLinux, (tester) async {
-      final gateway = _StateGateway(page: Completer<FeedPage>().future);
+    testWidgets('loading', skip: !_isLinux, (tester) async {
+      final gateway = _FakeGateway(page: Completer<FeedPage>().future);
 
       await _openFeed(tester, gateway);
       // The spinner never stops, so step the clock instead of settling.
@@ -85,8 +90,8 @@ void main() {
       );
     });
 
-    testWidgets('empty', skip: _notLinux, (tester) async {
-      final gateway = _StateGateway(
+    testWidgets('empty', skip: !_isLinux, (tester) async {
+      final gateway = _FakeGateway(
         page: Future.value(const FeedPage(items: [], nextCursor: null)),
       );
 
@@ -99,8 +104,8 @@ void main() {
       );
     });
 
-    testWidgets('error', skip: _notLinux, (tester) async {
-      final gateway = _StateGateway(
+    testWidgets('error', skip: !_isLinux, (tester) async {
+      final gateway = _FakeGateway(
         page: Future.error(Exception('Sample outage')),
       );
 
@@ -133,31 +138,10 @@ Future<void> _openFeed(WidgetTester tester, DataGateway gateway) async {
   await tester.pump(const Duration(seconds: 1));
 }
 
-/// Fixtures, but the feed holds just one Feed Item.
-class _OneItemGateway implements DataGateway {
-  _OneItemGateway(this.item);
-
-  final FeedItem item;
-  final _fixtures = FixtureDataGateway();
-
-  @override
-  bool get servesSampleData => true;
-
-  @override
-  Future<FeedPage> getFeedPage({
-    FeedFilter filter = const FeedFilter(),
-    FeedCursor? cursor,
-  }) async => FeedPage(items: [item], nextCursor: null);
-
-  @override
-  Future<SupportedFilters> getSupportedFilters() =>
-      _fixtures.getSupportedFilters();
-}
-
-/// Fixtures' real category chips, but the feed page is whatever [page] gives,
-/// to put the feed into its loading, empty or error state.
-class _StateGateway implements DataGateway {
-  _StateGateway({required this.page}) {
+/// Fixtures' real category chips, but the feed page is whatever [page] gives:
+/// one chosen Feed Item, or the feed's loading, empty or error state.
+class _FakeGateway implements DataGateway {
+  _FakeGateway({required this.page}) {
     // A failing page must not count as an unhandled error before the feed
     // listens to it.
     page.ignore();
