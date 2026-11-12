@@ -44,9 +44,42 @@ jobs:
         if: ${{ !cancelled() }}
         run: flutter analyze
 
+      # Golden (screenshot) tests run in their own check below.
       - name: flutter test
         if: ${{ !cancelled() }}
-        run: flutter test
+        run: flutter test --exclude-tags golden
+
+  # Golden check (ticket #35): screens that look different from the saved
+  # images in test/goldens/goldens/ fail the build. Required check name:
+  # "goldens" (recorded in PROJECT_STATUS.md). After an intended UI change,
+  # run the "Update goldens" workflow on the PR branch.
+  goldens:
+    name: goldens
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - run: flutter pub get
+
+      - name: flutter test --tags golden
+        run: flutter test --tags golden
+
+      # On a mismatch, Flutter writes before/after/diff images. Download
+      # them from the run's "Artifacts" section to see what changed.
+      - name: upload golden differences
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: test/**/failures/
+          if-no-files-found: ignore
 
   # Web end-to-end test (ticket #36): starts the whole app on Fixtures in
   # headless Chrome and acts like a Shopper. The job name below is a required

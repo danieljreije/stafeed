@@ -26,10 +26,18 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required check name (for branch protection, #37): **`format, analyze, test`** — shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
-- Steps inside that check: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Analyze and test still run when format fails, so one run reports every problem.
+- Steps inside that check: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test --exclude-tags golden` (goldens have their own check, below). Analyze and test still run when format fails, so one run reports every problem.
 - Proven 2026-11-12: green on PR #46 ([run](https://github.com/danieljreije/stafeed/actions/runs/43303624382)); red on deliberately broken PR #47 (format error + failing test, both caught; [run](https://github.com/danieljreije/stafeed/actions/runs/43303652959)), closed unmerged.
-- Second check: **`web end-to-end`** (#36), see below. Must be added to `main`'s required checks once green on its PR (see "Adding a required check").
-- Later gate tickets (#35 goldens) add their own check names here.
+- Other checks: **`goldens`** (#35) and **`web end-to-end`** (#36), see their sections below.
+
+## Golden check (#35)
+- Golden (screenshot) tests: `test/goldens/feed_goldens_test.dart`, images in `test/goldens/goldens/`. They start the whole app on Fixtures (through `dataGatewayProvider`) and cover each Feed Item kind in the app today (Affiliate Ad) plus the loading, empty and error feed states, with the search field, chips and sample-data marker visible.
+- Required check name: **`goldens`** — a second job in `.github/workflows/ci.yml`, shown as `CI / goldens (pull_request)`. Not yet in branch protection's required list: add it after the #35 PR merges (see "Adding a required check" below).
+- Goldens only run on Linux (tag `golden`); on Windows `flutter test` skips them. Text uses real Roboto/Material Icons kept in `test/goldens/fonts/`.
+- When the check fails, the run's **Artifacts** has `golden-failures` with before/after/diff pictures.
+- **Intended UI change?** Add the label **`update goldens`** to the PR (or Actions → "Update goldens" → Run workflow on the PR branch). It regenerates the images on Linux, commits them to the PR branch, removes the label and re-runs CI. Look at the new images in "Files changed" before merging.
+  - GitHub doesn't start checks for commits the workflow pushes itself, so it starts CI by hand (a `workflow_dispatch` run). An extra "CI" run marked "action required" may also appear for that commit; ignore it.
+- Proven 2026-11-13: on PR #48 the first images were made by the label workflow, and the layout fix in that PR turned `goldens` red until the label regenerated them. Proof PR #52 (deliberate visual change: big yellow price) failed `goldens` ([run](https://github.com/danieljreije/stafeed/actions/runs/43327235490/job/131562670341)), then passed after the label regenerated the images ([run](https://github.com/danieljreije/stafeed/actions/runs/43327585924/job/131563861631)); closed unmerged.
 
 ## Main protection & auto-merge (#37)
 - `main` is the default branch; the old `master` template branch is deleted (2026-11-13).
@@ -52,7 +60,8 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Test: `integration_test/shopper_journey_test.dart`. Starts the whole app from `main()` on the Fixture data gateway (no backend, no credentials) in headless Chrome, then acts like a Shopper: swipes through For You, saves a Product and finds it in Saved, searches, gets the empty state from a no-match search, and recovers with the category chips.
 - Run it locally: start chromedriver (matching your Chrome version) with `chromedriver --port=4444`, then
   `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/shopper_journey_test.dart -d web-server --browser-name=chrome --browser-dimension=430x932 --headless`
-- It found and fixed two real feed bugs: the feed card was only as tall as the search box and chips (~155px), and the Save heart sat under the search box where it couldn't be tapped.
+- It found two real feed bugs: the feed card was only as tall as the search box and chips (~155px; fixed in #35, which found it too), and the Save heart sat under the search box where it couldn't be tapped (fixed in #36).
+- Required on `main`: added by the orchestrator once #36 is merged.
 - Not covered because the app doesn't have it yet: the feed has no on-screen Back button (the test uses the browser's Back), and the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet).
 
 ## Verification
@@ -60,6 +69,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Android build: not run since the course prototype.
 
 ## Known gaps carried forward
+- The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
 - Fixture images load from picsum.photos, so cards show a placeholder when offline.
 - Offers aren't yet filtered by Destination Country (#6).
 

@@ -117,7 +117,8 @@ class FeedScreen extends ConsumerWidget {
 
           // Search, chips and the sample-data marker stay visible in every
           // feed state, so an empty search can always be cleared. Pinned to
-          // the top so they float over the feed instead of sizing it.
+          // the top so they float over the feed instead of deciding its
+          // height.
           Positioned(
             top: 0,
             left: 0,
