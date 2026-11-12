@@ -1,6 +1,6 @@
 # Stafeed — Project Status
 
-_Last updated: 2026-11-11_ · "Stafeed" is a working name.
+_Last updated: 2026-11-13_ · "Stafeed" is a working name.
 
 - Spec: [#1](https://github.com/danieljreije/stafeed/issues/1) — tickets are its sub-issues (#2–#30), with native "blocked by" links
 - Glossary: `CONTEXT.md` · Decisions: `docs/adr/` · Background vision: `docs/STAFEED_PRODUCT_SPEC.md`
@@ -29,6 +29,22 @@ _Last updated: 2026-11-11_ · "Stafeed" is a working name.
 - Steps inside that check: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Analyze and test still run when format fails, so one run reports every problem.
 - Proven 2026-11-12: green on PR #46 ([run](https://github.com/danieljreije/stafeed/actions/runs/43303624382)); red on deliberately broken PR #47 (format error + failing test, both caught; [run](https://github.com/danieljreije/stafeed/actions/runs/43303652959)), closed unmerged.
 - Later gate tickets (#35 goldens, #36 web end-to-end) add their own check names here.
+
+## Main protection & auto-merge (#37)
+- `main` is the default branch; the old `master` template branch is deleted (2026-11-13).
+- The repo is **public** (2026-11-13). GitHub's free plan only allows branch protection and auto-merge on public repos. Making it private again without GitHub Pro silently switches protection off.
+- Repo settings: auto-merge **on**, delete-branch-after-merge **on**.
+- Classic branch protection on `main`:
+  - Required check: `format, analyze, test`, pinned to the GitHub Actions app, so only the real CI run counts.
+  - "Require branches to be up to date" is **off**. Parallel agent PRs then don't stall each time `main` moves. CI already tests each PR merged onto `main` as it was when CI ran.
+  - A PR is required (no direct pushes), but **0 approvals** (ADR-0003).
+  - Applies to admins too. Force-pushes and deleting `main` are blocked.
+- Agent flow: open a PR to `main`, then `gh pr merge <n> --auto --merge`. It merges by itself once the checks are green. Never use admin or bypass merges.
+- **Adding a required check (later tickets):** add the job to CI and get it green on a PR first. Then add its check name to the `checks` list. Put back **all** existing checks, because this call replaces the whole list:
+  `gh api -X PATCH repos/danieljreije/stafeed/branches/main/protection/required_status_checks --input checks.json`
+  where `checks.json` is `{"strict": false, "checks": [{"context": "format, analyze, test", "app_id": 15368}, {"context": "<new check name>", "app_id": 15368}]}`.
+  Check the result with `gh api repos/danieljreije/stafeed/branches/main/protection/required_status_checks`, then list the new name under "CI gate" above.
+- Proven 2026-11-13: red PR #50 (bad formatting, auto-merge on) failed CI ([run](https://github.com/danieljreije/stafeed/actions/runs/43324828504)) and stayed blocked, then was closed unmerged. Green: this PR merged itself through auto-merge.
 
 ## Verification
 - `dart format`, `flutter analyze` (no issues), `flutter test` (33/33): passing on Windows as of #2.
