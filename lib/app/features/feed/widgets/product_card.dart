@@ -85,10 +85,14 @@ class ProductCard extends StatelessWidget {
               ],
             ),
           ),
+          // Halfway down the right edge: the feed's search box and chips
+          // float over the top of the card and would cover it there.
           Positioned(
             right: 16,
-            top: 16,
+            top: 0,
+            bottom: 0,
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
                   onPressed: () {

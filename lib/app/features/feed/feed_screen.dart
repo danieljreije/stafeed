@@ -116,38 +116,44 @@ class FeedScreen extends ConsumerWidget {
           ),
 
           // Search, chips and the sample-data marker stay visible in every
-          // feed state, so an empty search can always be cleared.
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const FeedSearchField(),
+          // feed state, so an empty search can always be cleared. Pinned to
+          // the top so they float over the feed instead of sizing it.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FeedSearchField(),
 
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 50,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _categoryChip(ref, filter, 'All', null),
-                        for (final category in categories)
-                          _categoryChip(
-                            ref,
-                            filter,
-                            category.label,
-                            category.id,
-                          ),
-                      ],
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 50,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          _categoryChip(ref, filter, 'All', null),
+                          for (final category in categories)
+                            _categoryChip(
+                              ref,
+                              filter,
+                              category.label,
+                              category.id,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (servesSampleData)
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: SampleDataMarker(),
-                    ),
-                ],
+                    if (servesSampleData)
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: SampleDataMarker(),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
