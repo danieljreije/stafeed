@@ -80,3 +80,39 @@ jobs:
           name: golden-failures
           path: test/**/failures/
           if-no-files-found: ignore
+
+  # Web end-to-end test (ticket #36): starts the whole app on Fixtures in
+  # headless Chrome and acts like a Shopper. The job name below is a required
+  # check name; keep it stable (recorded in PROJECT_STATUS.md).
+  web-e2e:
+    name: web end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - run: flutter pub get
+
+      # The runner image ships Chrome and a matching chromedriver.
+      - name: Start chromedriver
+        run: |
+          "$CHROMEWEBDRIVER/chromedriver" --port=4444 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4444/status > /dev/null && exit 0
+            sleep 1
+          done
+          echo "chromedriver did not start" && exit 1
+
+      - name: Shopper journey in headless Chrome
+        run: >
+          flutter drive
+          --driver=test_driver/integration_test.dart
+          --target=integration_test/shopper_journey_test.dart
+          -d web-server --browser-name=chrome
+          --browser-dimension=430x932 --headless
