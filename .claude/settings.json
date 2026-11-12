@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "auto",
+    "disableBypassPermissionsMode": "disable",
+    "allow": [
+      "Bash(flutter:*)",
+      "Bash(dart:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\":*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push origin main:*)",
+      "Bash(git push origin HEAD:main:*)",
+      "Bash(gh pr merge --admin:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh api -X DELETE:*)",
+      "Bash(gh api --method DELETE:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" pr merge --admin:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" repo delete:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" api -X DELETE:*)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" api --method DELETE:*)"
+    ]
+  }
+}
