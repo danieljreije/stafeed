@@ -1,0 +1,49 @@
+# CI gate (ticket #32, ADR-0003): every PR to main must pass this before it
+# can merge. The job name below is the required check name; keep it stable
+# (it is recorded in PROJECT_STATUS.md and used by branch protection, #37).
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: format, analyze, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the owner's local Flutter so "passes locally" and
+      # "passes in CI" mean the same thing.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - run: flutter --version
+
+      - run: flutter pub get
+
+      - name: dart format
+        run: dart format --output=none --set-exit-if-changed .
+
+      # Later steps still run when an earlier one fails, so one CI run
+      # reports every problem at once.
+      - name: flutter analyze
+        if: ${{ !cancelled() }}
+        run: flutter analyze
+
+      - name: flutter test
+        if: ${{ !cancelled() }}
+        run: flutter test
