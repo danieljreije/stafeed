@@ -78,7 +78,9 @@ Future<void> swipeUp(WidgetTester tester) async {
   expect(
     card.height,
     greaterThan(400),
-    reason: 'run in a phone-sized window: --browser-dimension=430x932',
+    reason:
+        'the feed is too short to swipe: run with '
+        '--browser-dimension=430x932, or the feed layout has regressed',
   );
   // Start low on the card, clear of the search box and chips on top.
   await tester.timedDragFrom(
@@ -153,7 +155,7 @@ void main() {
     );
     expect(find.byType(ListTile), findsOneWidget);
 
-    // Back to For You, which keeps its place in the feed state.
+    // Back to For You, which opens at the top of the feed again.
     goBack(tester);
     await waitForText(tester, 'Start Exploring');
     await tester.tap(find.text('Start Exploring'));
