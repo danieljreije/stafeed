@@ -9,6 +9,9 @@ on:
   schedule:
     # 03:00 UTC every night. Scheduled runs always use `main`.
     - cron: "0 3 * * *"
+  # TEMP (remove before merge): run on pushes to this branch for proof.
+  push:
+    branches: [claude/ticket-39-nightly-android-4e6e19]
   workflow_dispatch:
     inputs:
       force_failure:
