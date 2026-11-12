@@ -88,4 +88,18 @@ void main() {
       expect(find.textContaining('Sample data'), findsOneWidget);
     },
   );
+
+  testWidgets('the Save button is not covered by the search box', (
+    tester,
+  ) async {
+    await pumpFeed(tester);
+
+    // A real tap at the heart's position, so a control drawn on top of it
+    // would swallow the tap and the Product would stay unsaved.
+    await tester.tapAt(tester.getCenter(find.byIcon(Icons.favorite_border)));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.favorite), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
+  });
 }
