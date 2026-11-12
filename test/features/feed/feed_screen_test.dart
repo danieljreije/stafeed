@@ -6,6 +6,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
 import 'package:stafeed/app/features/feed/feed_screen.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
+import 'package:stafeed/app/features/feed/widgets/product_card.dart';
 
 Future<void> pumpFeed(WidgetTester tester) async {
   await tester.pumpWidget(
@@ -30,6 +31,15 @@ void main() {
 
     expect(find.text(first.product.title), findsOneWidget);
     expect(find.text(first.offer.price.format()), findsOneWidget);
+  });
+
+  testWidgets('the Feed Item fills the whole screen behind the search bar', (
+    tester,
+  ) async {
+    await pumpFeed(tester);
+
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    expect(tester.getSize(find.byType(ProductCard)), screen);
   });
 
   testWidgets('marks the feed as sample data', (tester) async {
