@@ -23,6 +23,13 @@ _Last updated: 2026-11-11_ · "Stafeed" is a working name.
 | #27 — 26 Apply for Shopify Catalog access | You |
 | #30 — 29 Final name & store IDs | You (before first store upload) |
 
+## CI gate (#32)
+- Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
+- Required check name (for branch protection, #37): **`format, analyze, test`** — shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
+- Steps inside that check: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`. Analyze and test still run when format fails, so one run reports every problem.
+- Proven 2026-11-12: green on PR #46 ([run](https://github.com/danieljreije/stafeed/actions/runs/43303624382)); red on deliberately broken PR #47 (format error + failing test, both caught; [run](https://github.com/danieljreije/stafeed/actions/runs/43303652959)), closed unmerged.
+- Later gate tickets (#35 goldens, #36 web end-to-end) add their own check names here.
+
 ## Verification
 - `dart format`, `flutter analyze` (no issues), `flutter test` (33/33): passing on Windows as of #2.
 - Android build: not run since the course prototype.
