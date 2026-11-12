@@ -45,7 +45,9 @@ final _feedItemKinds = <String, bool Function(FeedItem)>{
 };
 
 void main() {
-  setUpAll(_loadRealFonts);
+  setUpAll(() async {
+    if (!_notLinux) await _loadRealFonts();
+  });
 
   setUp(() {
     SharedPreferencesAsyncPlatform.instance =
@@ -178,27 +180,17 @@ class _StateGateway implements DataGateway {
       _fixtures.getSupportedFilters();
 }
 
-/// Tests draw text with a blocky placeholder font by default. Load the real
-/// Roboto and Material Icons that ship with the Flutter SDK so the images
-/// look like the app and a broken layout is easy to spot.
+/// Tests draw text with a blocky placeholder font by default. Load real
+/// Roboto and Material Icons (copied from the Flutter SDK into
+/// test/goldens/fonts, with their licence files) so the
+/// images look like the app and a broken layout is easy to spot.
 Future<void> _loadRealFonts() async {
-  if (!Platform.isLinux) return;
-
-  final fontsDir = Directory(
-    '${_flutterRoot()}/bin/cache/artifacts/material_fonts',
+  Future<ByteData> read(String name) async => ByteData.sublistView(
+    await File('test/goldens/fonts/$name').readAsBytes(),
   );
-  Future<ByteData> read(String name) async =>
-      ByteData.sublistView(await File('${fontsDir.path}/$name').readAsBytes());
 
   final roboto = FontLoader('Roboto');
-  for (final weight in [
-    'thin',
-    'light',
-    'regular',
-    'medium',
-    'bold',
-    'black',
-  ]) {
+  for (final weight in ['regular', 'medium', 'bold']) {
     roboto.addFont(read('roboto-$weight.ttf'));
   }
   await roboto.load();
@@ -206,18 +198,4 @@ Future<void> _loadRealFonts() async {
   await (FontLoader(
     'MaterialIcons',
   )..addFont(read('materialicons-regular.otf'))).load();
-}
-
-/// The Flutter SDK folder. `flutter test` sets FLUTTER_ROOT; otherwise walk
-/// up from the test runner, which lives inside the SDK's bin/cache.
-String _flutterRoot() {
-  final fromEnv = Platform.environment['FLUTTER_ROOT'];
-  if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
-
-  var dir = File(Platform.resolvedExecutable).parent;
-  while (dir.parent.path != dir.path) {
-    if (Directory('${dir.path}/bin/cache').existsSync()) return dir.path;
-    dir = dir.parent;
-  }
-  throw StateError('Could not find the Flutter SDK to load fonts from.');
 }
