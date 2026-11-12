@@ -1,0 +1,4 @@
+# Test tags. "golden" marks screenshot tests that only run on Linux (CI);
+# see test/goldens/feed_goldens_test.dart.
+tags:
+  golden:
