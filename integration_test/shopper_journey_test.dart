@@ -90,11 +90,21 @@ Future<void> swipeUp(WidgetTester tester) async {
   );
 }
 
+/// Set only by a manual run of the Nightly Android check (#39) with
+/// force_failure, to prove that a failure opens an issue. Never set otherwise.
+const forceFailure = bool.fromEnvironment('STAFEED_FORCE_E2E_FAILURE');
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('a Shopper swipes, saves, searches, filters and recovers from an '
       'empty search', (tester) async {
+    if (forceFailure) {
+      fail(
+        'Deliberate failure (STAFEED_FORCE_E2E_FAILURE): nothing is broken.',
+      );
+    }
+
     // What the Fixtures say the Shopper should see, asked from the same
     // gateway the app uses so the test follows Fixture edits.
     final gateway = FixtureDataGateway();
