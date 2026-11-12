@@ -8,7 +8,7 @@ One run of the Stafeed build loop (spec #31, ADR-0003). A scheduled Claude Code 
 DRY_RUN = true
 ```
 
-The scheduled task's own prompt overrides this line: it says `DRY_RUN = true` or `DRY_RUN = false`. If nothing says otherwise, **treat the run as a dry run**. Going live is ticket #41.
+The scheduled task's own prompt overrides this line: it says `DRY_RUN = true` or `DRY_RUN = false`. If nothing says otherwise, **treat the run as a dry run**. The scheduled task went live in #41.
 
 - **Dry run:** read the tracker, pick the ticket, explain every skip, print the report (see "Dry-run report"). **Write nothing**: no assignee, label, comment, branch, worktree, commit, push, PR or file. Read-only `gh` and `git` commands only.
 - **Live run:** do every step below.
@@ -18,8 +18,8 @@ The scheduled task's own prompt overrides this line: it says `DRY_RUN = true` or
 - Read `CLAUDE.md`, `CONTEXT.md`, `PROJECT_STATUS.md`, `docs/agents/*.md` and the ADRs in `docs/adr/` before acting. Use the glossary's words.
 - `gh` may not be on `PATH`; on the owner's PC it is `"/c/Program Files/GitHub CLI/gh.exe"`. If GraphQL is blocked, use the REST forms in `docs/agents/issue-tracker.md`. Repo: `danieljreije/stafeed`. All work targets `main`.
 - Run shell commands with the Bash tool so the project allowlist in `.claude/settings.json` applies (`flutter`, `dart`, `git`, `gh`). The session runs in auto mode; never bypass-permissions.
-- **Never weaken, skip or delete a test to get green.** The test suite is the definition of done (ADR-0003). That includes golden images: update a golden only when the ticket asks for that UI change, and only through the "update goldens" workflow.
-- If a command you need is blocked by permissions, do not work around it: take the give-up path below.
+- **Never weaken, skip or delete a test to get green.** The test suite is the definition of done (ADR-0003). That means: no deleting or commenting out tests, no `skip:`, no loosening an expectation so broken code passes, no removing a check from CI, no excluding files from `flutter analyze`. It includes golden images and the web end-to-end test: update a golden only when the ticket asks for that UI change, and only through the "update goldens" workflow. Changing a test is fine only when the ticket itself changes the behaviour that test describes; say so in the PR body. If you think an existing test is wrong and the ticket doesn't cover it, don't touch it: take the give-up path.
+- If a command or tool call you need is blocked by permissions (denied, or it would need someone to approve it), do not work around it: take the give-up path below. Nobody is watching a scheduled run.
 - Never touch the owner's own checkout. Never force-push, never push to `main` directly, never merge with admin rights, never edit branch protection or CI to get a PR through.
 - Don't commit the generated plugin registrant files under `linux/`, `macos/` or `windows/`.
 - Never put secret keys in the app (see `CLAUDE.md`).
@@ -72,12 +72,15 @@ In a live run, also close any `done but still open` ticket found in step 1 with 
 
 ## Step 3 - worktree off main (live only)
 
+The run starts in the owner's checkout. Leave it alone (it may have uncommitted work; don't switch its branch, stash, reset or commit there). Create the worktree inside it, under the git-ignored `.claude/worktrees/`, so it stays within the session's working folder:
+
 ```bash
 git fetch origin
-git worktree add ../stafeed-ticket-<n> -b claude/ticket-<n>-<short-slug> origin/main
+git worktree add .claude/worktrees/orchestrator-ticket-<n> -b claude/ticket-<n>-<short-slug> origin/main
+cd .claude/worktrees/orchestrator-ticket-<n>
 ```
 
-Work only inside that worktree.
+Work only inside that worktree. When step 0 continues an existing PR, add the worktree on its branch instead (`git worktree add .claude/worktrees/orchestrator-ticket-<n> <branch>` after `git fetch origin`), or reuse it if it is still there.
 
 ## Step 4 - build
 
@@ -100,17 +103,27 @@ Push the branch and open a PR to `main`:
 - Title ends with `(#<n>)`.
 - Body: what was built, what was tested, preview link if one exists, `Closes #<n>`, and the line `Opened by the Stafeed orchestrator`.
 
-Enable auto-merge (`gh pr merge <pr> --auto --merge`); branch protection (#37) merges it once every required check is green. Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log, fix the cause in the same worktree, push. When the PR merges, check the ticket closed (`Closes #<n>` does it); if not, close it with a comment naming the PR.
+**Turn on auto-merge right after opening the PR** (`gh pr merge <pr> --auto --merge`), then confirm it took: `gh pr view <pr> --json autoMergeRequest` must not be `null`. Branch protection (#37) merges the PR once every required check is green (`format, analyze, test`, `goldens`, `web end-to-end`). No human approves it. Never use `--admin`.
+
+Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log (`gh run view <run-id> --log-failed`), fix the cause in the same worktree, push. A `goldens` failure from a UI change the ticket asks for: add the `update goldens` label and look at the new images; any other `goldens` failure is a bug to fix. When the PR merges, check the ticket closed (`Closes #<n>` does it); if not, close it with a comment naming the PR.
+
+Finish by removing the worktree (`git worktree remove .claude/worktrees/orchestrator-ticket-<n>` from the owner's checkout) and printing a short live report: ticket, PR link, merged or not, tickets closed as done-but-open. One ticket per run: stop there.
 
 ## Give-up path
 
-After **two** failed attempts to get CI green (an attempt = one push that comes back red), or as soon as a command is blocked by permissions:
+Take it on whichever comes first:
 
-1. Comment on the ticket: what was tried, what failed (link the CI run), what a human needs to do.
-2. Unassign yourself, remove `ready-for-agent`, add `ready-for-human`.
-3. Leave the PR open as a draft for the owner, or close it if it contains nothing useful.
-4. Send a push notification: `Stafeed: #<n> needs you - <one line why>`.
-5. Stop. Don't start another ticket in this run.
+- **two failed attempts**: two pushes whose CI came back red (count every red run on the PR, including runs from earlier orchestrator runs that you continued in step 0), or two rounds of fixing where the local checks in step 4 still fail;
+- **a permission block**: any command or tool call denied or waiting for approval;
+- the ticket can't be done as written (it contradicts a test, needs a secret key, a real device, an account, or a decision only the owner can make).
+
+Then:
+
+1. Comment on the ticket: what was tried, what failed (link the CI run or quote the local error / the blocked command), what a human needs to do. Start the comment with `Stafeed orchestrator gave up:`.
+2. Unassign yourself, remove `ready-for-agent`, add `ready-for-human` (`gh issue edit <n> --remove-assignee @me --remove-label ready-for-agent --add-label ready-for-human`). Re-read the ticket to check all three took.
+3. If there is a PR: turn auto-merge off (`gh pr merge <pr> --disable-auto`), then leave it open as a draft for the owner (`gh pr ready <pr> --undo`), or close it if it contains nothing useful. Remove the worktree.
+4. Send a push notification with the `PushNotification` tool: `Stafeed: #<n> needs you - <one line why>`.
+5. Print the live report (as in step 5, saying it gave up) and stop. Don't start another ticket in this run. That's how the loop moves on: the ticket is now `ready-for-human`, so the next run skips it and takes the next ticket in the frontier.
 
 ## Dry-run report
 

@@ -64,12 +64,19 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Not required yet: it becomes a required check on `main` once PR #53 merges.
 - Not covered because the app doesn't have it yet: the feed has no on-screen Back button (the test uses the browser's Back), and the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet).
 
-## Orchestrator (#38, dry run only)
-- Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it in a worktree off `main`, opens a PR, follows CI, gives up after two red attempts or any permission block (comment, unassign, `ready-for-human`, push notification). It never weakens or deletes a test to get green.
-- Scheduled task: `stafeed-orchestrator`, prompt in `docs/agents/orchestrator-scheduled-task.md`. Dry run, no schedule (run by hand). Goes live every two hours in #41.
-- Permissions: `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh` in auto mode and disables bypass-permissions.
-- **Pause the loop:** Claude desktop app → Scheduled → `Stafeed orchestrator` → switch off.
-- Tickets whose PR merged before `main` became the default branch (#32, #34) stayed open and still block their dependants. The run prompt reports these as "done but still open"; a live run closes them. From now on `Closes #n` closes the ticket on merge.
+## Orchestrator (#38 dry run, #41 live)
+- Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it test-first in a worktree off `main` (under `.claude/worktrees/`), opens a PR with `PROJECT_STATUS.md` updated, turns on auto-merge and follows CI. It never weakens, skips or deletes a test to get green.
+- Give-up path: after two red attempts, any permission block, or a ticket that can't be done as written, it comments on the ticket (`Stafeed orchestrator gave up: ...`), unassigns itself, swaps `ready-for-agent` for `ready-for-human`, sends you a push notification and stops. The next run skips that ticket and takes the next one.
+- Scheduled task: `stafeed-orchestrator` (Claude desktop app, on this PC), prompt in `docs/agents/orchestrator-scheduled-task.md`. Auto mode, never bypass-permissions; `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh`. It only runs while the PC is on and the Claude app is open.
+- To keep the loop off a ticket (e.g. you or another session is working on it), assign it to someone: assigned tickets are skipped.
+- Tickets whose PR merged before `main` became the default branch (#32, #34) stayed open. A live run closes these "done but still open" tickets itself.
+
+### Pause and resume the loop
+- **Pause:** Claude desktop app → **Scheduled** (left sidebar) → `Stafeed orchestrator` → switch it **off**. No new runs start. A run already going finishes by itself; to stop it now, open its session (it shows under the task's runs) and press stop.
+- **Resume:** same place, switch it back **on**. The next run starts at the next even hour.
+- **Run once now:** same place → **Run now** (only while it is switched on).
+- **Back to dry runs** (reports only, writes nothing): replace the task's prompt with the dry-run prompt in `docs/agents/orchestrator-scheduled-task.md`.
+- Pausing never loses work: an open orchestrator PR is picked up again by the next run (step 0 of the run prompt).
 
 ## Verification
 - `dart format`, `flutter analyze` (no issues), `flutter test` (33/33): passing on Windows as of #2.
