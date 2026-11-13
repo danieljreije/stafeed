@@ -1,0 +1,61 @@
+# Daily summary (ticket #43): once a day, posts one comment on spec #1 that
+# lists what merged, what failed, what was handed back as `ready-for-human`
+# and which ticket the orchestrator takes next (a short "no activity" line on
+# quiet days). It reads the tracker and writes nothing except that comment.
+# The text is built by tool/daily_summary.dart (tests: test/tool/).
+name: Daily summary
+
+on:
+  schedule:
+    # 06:00 UTC every day. Scheduled runs always use `main`.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      post:
+        description: >-
+          Post the summary on #1 (only works on main). Leave off for a trial
+          run that only prints the summary in the run log.
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-summary
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  summary:
+    name: daily summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      # For the one comment on #1.
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.2
+          cache: true
+
+      - run: flutter pub get
+
+      # The schedule always posts; a manual run posts only when asked to,
+      # and only from `main`.
+      - name: Daily summary on spec #1
+        env:
+          GH_TOKEN: ${{ github.token }}
+          POST: ${{ github.event_name == 'schedule' || (inputs.post == true && github.ref == 'refs/heads/main') }}
+        run: |
+          if [ "$POST" = "true" ]; then
+            dart run tool/daily_summary.dart --post
+          else
+            dart run tool/daily_summary.dart
+          fi
