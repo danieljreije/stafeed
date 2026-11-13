@@ -10,11 +10,14 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - #2 — 01 Data gateway + Fixtures; DummyJSON removed (2026-11-11)
 - #3 — 02 Reliable feed: paging, stale results, retry, refresh, states (2026-11-13, built by the orchestrator)
 - #4 — 03 Feed Item kinds & labels: AD label, Brand Ads, Not an Ad (2026-11-13, built by the orchestrator)
+- #6 — 05 App shell, onboarding & Destination Country (2026-11-13, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
-| #6 — 05 App shell, onboarding & Destination Country | Local agent (Flutter) |
+| #7 — 06 Product details, Merchant Handoff, Share, Report | Local agent (Flutter) |
+| #8 — 07 Saved Products independent of the feed | Local agent (Flutter) |
+| #9 — 08 Events log, debug screen & ad counter | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
 | #15 — 14 Backend first slice | Cloud agent |
 | #26 — 25 Research: pay-per-click networks | Cloud agent |
@@ -50,6 +53,36 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
   - The Affiliate Ad golden image is regenerated (it gains the AD badge and the note).
 - Choices made by the orchestrator: the wording of the Not an Ad note; white AD badge; chips show the Product's title; where Brand Ads sit in the Fixture feed.
 
+## App shell, onboarding & Destination Country (#6)
+- **Four tabs** at the bottom: Feed, Search, Saved, Profile (`lib/app/features/shell/app_shell.dart`). Each keeps its place while you are on another one: the Feed stays on the Feed Item you were on, Search keeps what you typed, Saved keeps its scroll position. Routes are in `lib/app/router/app_router.dart` (`go_router`, new package).
+- **The old Home landing screen is gone**, with its test (`test/widget_test.dart`). The app opens on onboarding the first time and on the Feed every time after.
+- **Onboarding** (`lib/app/features/onboarding/`), three steps:
+  1. "Welcome to Stafeed. It's all ads. We're not hiding it."
+  2. Destination Country (United States, United Kingdom, United Arab Emirates, Lebanon) and currency. The country's usual currency is suggested; USD, GBP, EUR and AED can be picked.
+  3. Interests (the feed's categories). **Skip** leaves them empty.
+
+  The choices are stored on the device (`lib/app/features/shopper/`). Closing the app before the last step shows onboarding again from the start.
+- **Destination Country filtering**: the data gateway knows the Shopper's Destination Country and never serves an Offer that doesn't ship there. On Fixtures (`fixture_data_gateway.dart`):
+  - an Affiliate Ad shows the Product's first Offer that ships there, and a Product with none is left out;
+  - search, category chips and paging all stay inside the country;
+  - a Brand Ad only links the Products that can be bought there, and is left out when none can. Its own words and pictures are never changed.
+- **App name in one place**: `lib/app/app_name.dart`. The window title, the welcome line and the "Stafeed may earn a commission" / "Stafeed earns nothing on this one" notes read it from there.
+- **Tone-of-voice guide**: `docs/TONE_OF_VOICE.md`.
+- **Product-detail route** exists (`/product/<id>`) with a bare screen (title, Brand, description). Nothing links to it yet; #7 builds the real screen and opens it from the feed.
+- Tests: `test/app/app_shell_test.dart` (whole app: onboarding once, tabs keeping their place, country filtering), new "Destination Country" tests in `test/features/feed/data/fixture_data_gateway_test.dart`, `test/features/shopper/shopper_config_storage_test.dart`. The web end-to-end test now starts with onboarding and moves between tabs.
+- Changed on purpose, because #6 asks for it:
+  - `test/widget_test.dart` (the Home screen test) is deleted with the Home screen.
+  - The golden tests no longer tap "Start Exploring": they start the app for a Shopper who has finished onboarding. All six golden images are regenerated (each gains the tab bar).
+  - The web end-to-end test goes through onboarding instead of Home, uses the Saved and Feed tabs instead of Back, and expects the Feed to still be on the saved Feed Item when the Shopper returns to it (before, the feed opened again at the top).
+- Fixed on the way: a Saved Product whose picture failed to load broke the layout of its row in Saved. The picture now sits in a fixed box with a broken-image icon as fallback.
+- Not done here, for you to know:
+  - **Currency is stored but prices aren't converted.** Each price still shows in its Offer's own currency (USD or GBP on Fixtures). Converting needs exchange rates, which no ticket covers yet.
+  - **Interests are stored but don't change the feed yet.** Ranking (#10) uses them.
+  - **Profile is read-only**: it shows the country, currency and interests. Changing them is #13.
+  - **Search tab is simple**: a search box and the category list; either one filters the Feed and takes you there. The search box and chips on the Feed are still there too. Shopping Sessions (#11) will take over this tab.
+  - The launcher label and browser tab title still say "stafeed" in `android/`, `ios/` and `web/`; those files can't read the Dart name. They change with the final name (#30).
+- Choices made by the orchestrator: the wording of the onboarding questions and buttons; the currency list; the tab icons (Saved is a bookmark, because the heart is the Save button); trimming a Brand Ad's linked Products by country instead of hiding the whole ad.
+
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required checks on `main` (branch protection, #37): **`format, analyze, test`** and **`goldens`** (#35, required since 2026-11-13). The first is shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
@@ -58,7 +91,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - **`web end-to-end`** (#36) also runs on every PR. It becomes required once PR #53 merges. Each check has its own section below.
 
 ## Golden check (#35)
-- Golden (screenshot) tests: `test/goldens/feed_goldens_test.dart`, images in `test/goldens/goldens/`. They start the whole app on Fixtures (through `dataGatewayProvider`) and cover each Feed Item kind (Affiliate Ad, Brand Ad, Not an Ad) plus the loading, empty and error feed states, with the search field, chips and sample-data marker visible.
+- Golden (screenshot) tests: `test/goldens/feed_goldens_test.dart`, images in `test/goldens/goldens/`. They start the whole app on Fixtures (through `dataGatewayProvider`), for a Shopper who has finished onboarding, and cover each Feed Item kind (Affiliate Ad, Brand Ad, Not an Ad) plus the loading, empty and error feed states, with the search field, chips, sample-data marker and tab bar visible.
 - Required check name: **`goldens`** — a second job in `.github/workflows/ci.yml`, shown as `CI / goldens (pull_request)`. Required on `main` since 2026-11-13.
 - Goldens only run on Linux (tag `golden`); on Windows `flutter test` skips them. Text uses real Roboto/Material Icons kept in `test/goldens/fonts/`.
 - When the check fails, the run's **Artifacts** has `golden-failures` with before/after/diff pictures.
@@ -84,12 +117,12 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 
 ## Web end-to-end test (#36)
 - Check name: **`web end-to-end`** — shown as `CI / web end-to-end (pull_request)`. Separate job in `.github/workflows/ci.yml`, runs on every PR to `main`.
-- Test: `integration_test/shopper_journey_test.dart`. Starts the whole app from `main()` on the Fixture data gateway (no backend, no credentials) in headless Chrome, then acts like a Shopper: swipes through For You, saves a Product and finds it in Saved, searches, gets the empty state from a no-match search, and recovers with the category chips.
+- Test: `integration_test/shopper_journey_test.dart`. Starts the whole app from `main()` on the Fixture data gateway (no backend, no credentials) in headless Chrome, then acts like a new Shopper: goes through onboarding (United States, interests skipped), swipes through For You, saves a Product and finds it in the Saved tab, returns to the Feed tab where it left off, searches, gets the empty state from a no-match search, and recovers with the category chips.
 - Run it locally: start chromedriver (matching your Chrome version) with `chromedriver --port=4444`, then
   `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/shopper_journey_test.dart -d web-server --browser-name=chrome --browser-dimension=430x932 --headless`
 - It found two real feed bugs: the feed card was only as tall as the search box and chips (~155px; fixed in #35, which found it too), and the Save heart sat under the search box where it couldn't be tapped (fixed in #36).
 - Not required yet: it becomes a required check on `main` once PR #53 merges.
-- Not covered because the app doesn't have it yet: the feed has no on-screen Back button (the test uses the browser's Back), and the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet).
+- Not covered because the app doesn't have it yet: the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet, #8).
 
 ## Nightly Android check (#39)
 - Workflow: `.github/workflows/nightly-android.yml` (`Nightly Android check`). Runs every night at 03:00 UTC on `main`, and by hand (Actions → "Nightly Android check" → Run workflow). **Not a PR check**: never add it to the required checks.
@@ -136,13 +169,13 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (124 passing, 6 golden tests skipped off Linux): passing on Windows as of #4.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (163 passing, 6 golden tests skipped off Linux): passing on Windows as of #6.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
 - The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
 - Fixture images load from picsum.photos, so cards show a placeholder when offline.
-- Offers aren't yet filtered by Destination Country (#6).
+- Prices aren't converted to the Shopper's currency, and interests don't change the feed yet (see #6 above).
 
 ## Launch country
 Undecided (decided in #24 based on Awin approvals).

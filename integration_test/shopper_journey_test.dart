@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
+import 'package:stafeed/app/features/feed/widgets/product_card.dart';
 import 'package:stafeed/main.dart' as app;
 
 /// Pumps frames until [condition] holds, or fails with [what] after [timeout].
@@ -92,15 +93,22 @@ Future<void> waitForCard(WidgetTester tester, AffiliateAd item) => waitFor(
           1,
 );
 
-/// Stands in for the browser's Back button: the feed has no on-screen back
-/// control today.
-void goBack(WidgetTester tester) {
-  tester.state<NavigatorState>(find.byType(Navigator)).pop();
+/// Taps one of the four tabs at the bottom of the app.
+Future<void> openTab(WidgetTester tester, String label) async {
+  final tab = find.widgetWithText(NavigationDestination, label);
+  await waitFor(tester, 'the "$label" tab', () => tab.evaluate().length == 1);
+  await tester.tap(tab);
 }
+
+/// The feed itself. (A Feed Item with several pictures has a sideways
+/// PageView of its own.)
+final feedPages = find.byWidgetPredicate(
+  (widget) => widget is PageView && widget.scrollDirection == Axis.vertical,
+);
 
 /// A real finger swipe: drags most of the card's height over 300ms.
 Future<void> swipeUp(WidgetTester tester) async {
-  final feed = find.byType(PageView);
+  final feed = feedPages;
   final card = tester.getRect(feed);
   expect(
     card.height,
@@ -124,17 +132,17 @@ const forceFailure = bool.fromEnvironment('STAFEED_FORCE_E2E_FAILURE');
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('a Shopper swipes, saves, searches, filters and recovers from an '
-      'empty search', (tester) async {
+  testWidgets('a new Shopper is onboarded, then swipes, saves, switches tabs, '
+      'searches, filters and recovers from an empty search', (tester) async {
     if (forceFailure) {
       fail(
         'Deliberate failure (STAFEED_FORCE_E2E_FAILURE): nothing is broken.',
       );
     }
 
-    // What the Fixtures say the Shopper should see, asked from the same
-    // gateway the app uses so the test follows Fixture edits.
-    final gateway = FixtureDataGateway();
+    // What the Fixtures say a Shopper in the United States should see, asked
+    // from the same gateway the app uses so the test follows Fixture edits.
+    final gateway = FixtureDataGateway(destinationCountry: 'US');
     final forYou = affiliateAds((await gateway.getFeedPage()).items);
     const query = 'Kestrel';
     final searched = affiliateAds(
@@ -150,17 +158,40 @@ void main() {
     expect(watches, isNotEmpty);
     expect(watches.first.product.id, isNot(forYou.first.product.id));
 
-    // A fresh Shopper: nothing saved from an earlier run in this browser.
+    // A fresh Shopper: nothing saved, and no onboarding done, in an earlier
+    // run in this browser.
     await SharedPreferencesAsync().clear();
 
-    // Start the real app from its root.
+    // Start the real app from its root. A first launch opens on onboarding,
+    // with no tabs yet.
     app.main();
-    await waitForText(tester, 'Start Exploring');
-    expect(find.text('Discover'), findsOneWidget);
+    await waitForText(
+      tester,
+      "Welcome to Stafeed. It's all ads. We're not hiding it.",
+    );
+    expect(find.byType(NavigationBar), findsNothing);
 
-    // For You opens on the first Fixture, labelled as sample data.
-    await tapText(tester, 'Start Exploring');
+    // Destination Country (with its usual currency), then skip interests.
+    await tapText(tester, "Let's go");
+    await tapText(tester, 'United States');
+    await waitFor(
+      tester,
+      'USD to be suggested as the currency',
+      () => find
+          .widgetWithText(ChoiceChip, 'USD')
+          .evaluate()
+          .any((element) => (element.widget as ChoiceChip).selected),
+    );
+    await tapText(tester, 'Continue');
+    await tapText(tester, 'Skip');
+
+    // The app opens straight into For You, on the first Fixture that ships
+    // to the United States, labelled as sample data.
     await waitForCard(tester, forYou[0]);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    for (final item in forYou.take(3)) {
+      expect(item.offer.shipsTo, contains('US'));
+    }
     expect(find.text('Sample data · not real products'), findsOneWidget);
     expect(find.text(forYou[0].offer.price.format()), findsOneWidget);
     // Every Ad says it is one.
@@ -181,13 +212,12 @@ void main() {
       tester,
       'the card to show Saved',
       () =>
-          find.text('Saved').evaluate().isNotEmpty &&
+          find.widgetWithText(ProductCard, 'Saved').evaluate().isNotEmpty &&
           find.byIcon(Icons.favorite).evaluate().isNotEmpty,
     );
 
-    // Find it in Saved.
-    goBack(tester);
-    await tapText(tester, 'Saved Products');
+    // Find it in the Saved tab.
+    await openTab(tester, 'Saved');
     await waitFor(
       tester,
       '"${saved.title}" in the Saved list',
@@ -195,10 +225,10 @@ void main() {
     );
     expect(find.byType(ListTile), findsOneWidget);
 
-    // Back to For You, which opens at the top of the feed again.
-    goBack(tester);
-    await tapText(tester, 'Start Exploring');
-    await waitForCard(tester, forYou[0]);
+    // Back on the Feed tab, For You is where the Shopper left it.
+    await openTab(tester, 'Feed');
+    await waitForCard(tester, forYou[2]);
+    expect(find.widgetWithText(ProductCard, 'Saved'), findsOneWidget);
 
     // Search.
     await tester.enterText(find.byType(TextField), query);

@@ -1,8 +1,9 @@
 // Golden (screenshot) tests for the feed (ticket #35).
 //
-// Each test drives the whole app (StafeedApp, starting at Home) on Fixtures
-// through the data gateway seam, then compares the screen to a saved image
-// under test/goldens/goldens/.
+// Each test drives the whole app (StafeedApp, for a Shopper who has finished
+// onboarding, so it opens on the Feed tab) on Fixtures through the data
+// gateway seam, then compares the screen to a saved image under
+// test/goldens/goldens/.
 //
 // Golden images are only made and compared on Linux (GitHub's CI machines),
 // because text renders slightly differently on Windows and macOS. Elsewhere
@@ -32,7 +33,9 @@ import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
 import 'package:stafeed/app/features/feed/models/supported_filters.dart';
 import 'package:stafeed/app/features/feed/providers/data_gateway_provider.dart';
-import 'package:stafeed/main.dart';
+import 'package:stafeed/app/stafeed_app.dart';
+
+import '../support/shopper.dart';
 
 /// Goldens only run on Linux; see the note at the top of this file.
 final bool _isLinux = Platform.isLinux;
@@ -131,11 +134,14 @@ void main() {
   });
 }
 
-/// Starts the real app on [gateway] and taps through Home into the feed.
+/// Starts the real app on [gateway] for a Shopper who has finished
+/// onboarding, so it opens on the feed.
 Future<void> _openFeed(WidgetTester tester, DataGateway gateway) async {
   tester.view.physicalSize = _screenSize;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+
+  await storeOnboardedShopper();
 
   await tester.pumpWidget(
     ProviderScope(
@@ -143,8 +149,9 @@ Future<void> _openFeed(WidgetTester tester, DataGateway gateway) async {
       child: const StafeedApp(),
     ),
   );
-  await tester.tap(find.text('Start Exploring'));
-  // Let the page transition finish without waiting on endless spinners.
+  // Let the app read the Shopper's config and open the feed, without
+  // waiting on endless spinners.
+  await tester.pump();
   await tester.pump();
   await tester.pump(const Duration(seconds: 1));
 }
