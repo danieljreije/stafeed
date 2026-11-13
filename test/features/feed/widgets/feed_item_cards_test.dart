@@ -201,6 +201,28 @@ void main() {
       expect(find.bySemanticsLabel('Image 3 of 3'), findsOneWidget);
     });
 
+    testWidgets('starts again at the first image when its pictures change', (
+      tester,
+    ) async {
+      await pumpCarousel(tester, threeImages);
+      await tester.drag(find.byType(MediaCarousel), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Image 2 of 3'), findsOneWidget);
+
+      // Another Feed Item takes this card's place.
+      await pumpCarousel(tester, const [
+        ImageMedia('https://example.com/other-1.jpg'),
+        ImageMedia('https://example.com/other-2.jpg'),
+      ]);
+
+      expect(find.bySemanticsLabel('Image 1 of 2'), findsOneWidget);
+      final shown = tester.widget<Image>(find.byType(Image));
+      expect(
+        (shown.image as NetworkImage).url,
+        'https://example.com/other-1.jpg',
+      );
+    });
+
     testWidgets('a single image has no position marker', (tester) async {
       await pumpCarousel(tester, const [
         ImageMedia('https://example.com/1.jpg'),

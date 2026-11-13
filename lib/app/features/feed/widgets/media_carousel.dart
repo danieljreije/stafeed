@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/media.dart';
@@ -15,12 +16,25 @@ class MediaCarousel extends StatefulWidget {
 }
 
 class _MediaCarouselState extends State<MediaCarousel> {
+  final _controller = PageController();
   int _current = 0;
 
   @override
   void didUpdateWidget(MediaCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_current >= widget.media.length) _current = 0;
+
+    // Different pictures (another Feed Item took this card's place, say
+    // after a refresh): start again at the first one.
+    if (!listEquals(oldWidget.media, widget.media)) {
+      _current = 0;
+      if (_controller.hasClients) _controller.jumpToPage(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -36,6 +50,7 @@ class _MediaCarouselState extends State<MediaCarousel> {
       fit: StackFit.expand,
       children: [
         PageView.builder(
+          controller: _controller,
           itemCount: media.length,
           onPageChanged: (index) => setState(() => _current = index),
           itemBuilder: (context, index) => _MediaView(media[index]),

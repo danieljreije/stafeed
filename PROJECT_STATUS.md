@@ -136,7 +136,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (123 passing, 6 golden tests skipped off Linux): passing on Windows as of #4.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (124 passing, 6 golden tests skipped off Linux): passing on Windows as of #4.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward

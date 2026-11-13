@@ -20,7 +20,7 @@ class BrandAdCard extends StatelessWidget {
     return FeedCardFrame(
       media: ad.media,
       details: [
-        const AdLabel(isSponsored: true),
+        AdLabel(isSponsored: ad.isSponsored),
         const SizedBox(height: 8),
         Text(
           ad.brand,
