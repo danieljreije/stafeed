@@ -16,7 +16,7 @@ abstract final class OnboardingCopy {
 
   static const countryQuestion = 'Where should things be delivered?';
   static const countryNote = "You'll only see what ships there.";
-  static const currencyQuestion = 'Which currency do you think in?';
+  static const currencyQuestion = 'Which currency do you use?';
   static const next = 'Continue';
 
   static const interestsQuestion = 'What are you into?';

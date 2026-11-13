@@ -416,8 +416,11 @@ void main() {
       isAvailable: isAvailable,
     );
 
-    bool canBeBoughtIn(Product product, String country) => product.offers.any(
-      (offer) => offer.isAvailable && offer.shipsTo.contains(country),
+    bool hasAdOfferIn(Product product, String country) => product.offers.any(
+      (offer) =>
+          offer.isAffiliate &&
+          offer.isAvailable &&
+          offer.shipsTo.contains(country),
     );
 
     test('every Offer in the feed ships there, for each country', () async {
@@ -550,7 +553,7 @@ void main() {
       expect(items.map((i) => i.id), ['ships']);
     });
 
-    test('a Brand Ad only links Products that can be bought there', () async {
+    test('a Brand Ad only links Products with an Ad Offer there', () async {
       for (final country in countries) {
         final items = await readWholeFeed(
           FixtureDataGateway(destinationCountry: country),
@@ -559,7 +562,7 @@ void main() {
         for (final ad in items.whereType<BrandAd>()) {
           expect(ad.products, isNotEmpty, reason: '${ad.id} in $country');
           expect(
-            ad.products.every((p) => canBeBoughtIn(p, country)),
+            ad.products.every((p) => hasAdOfferIn(p, country)),
             isTrue,
             reason: '${ad.id} in $country',
           );
@@ -600,6 +603,9 @@ void main() {
     test('a Brand Ad with no Product to buy there is left out', () async {
       final elsewhere = product('elsewhere', [
         offer('elsewhere', {'GB'}),
+        // Ships here, but earns nothing: not in For You, so not linked.
+        offer('free-here', {'US'}, isAffiliate: false),
+        offer('gone-here', {'US'}, isAvailable: false),
       ]);
       final gateway = FixtureDataGateway(
         products: [elsewhere],

@@ -65,7 +65,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - **Destination Country filtering**: the data gateway knows the Shopper's Destination Country and never serves an Offer that doesn't ship there. On Fixtures (`fixture_data_gateway.dart`):
   - an Affiliate Ad shows the Product's first Offer that ships there, and a Product with none is left out;
   - search, category chips and paging all stay inside the country;
-  - a Brand Ad only links the Products that can be bought there, and is left out when none can. Its own words and pictures are never changed.
+  - a Brand Ad only links the Products that are in the feed there, and is left out when none is. Its own words and pictures are never changed.
 - **App name in one place**: `lib/app/app_name.dart`. The window title, the welcome line and the "Stafeed may earn a commission" / "Stafeed earns nothing on this one" notes read it from there.
 - **Tone-of-voice guide**: `docs/TONE_OF_VOICE.md`.
 - **Product-detail route** exists (`/product/<id>`) with a bare screen (title, Brand, description). Nothing links to it yet; #7 builds the real screen and opens it from the feed.

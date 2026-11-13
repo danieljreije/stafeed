@@ -1,7 +1,7 @@
 /// Where the Shopper wants Products delivered. Offers that don't ship there
 /// are never shown.
 ///
-/// The onboarding list for now; the real launch market is still open (#24).
+/// The onboarding list for now; the launch country is still open (#24).
 enum DestinationCountry {
   unitedStates('US', 'United States', 'USD'),
   unitedKingdom('GB', 'United Kingdom', 'GBP'),

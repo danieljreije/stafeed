@@ -20,7 +20,7 @@ import 'fixtures/fixture_products.dart';
 /// Given a Destination Country, it never serves an Offer that doesn't ship
 /// there: each Affiliate Ad shows the Product's first Offer that does, a
 /// Product with none is left out, and a Brand Ad only links the Products
-/// that can be bought there (and is left out when there are none).
+/// still in the feed there (and is left out when there are none).
 class FixtureDataGateway implements DataGateway {
   FixtureDataGateway({
     List<Product>? products,
@@ -117,15 +117,17 @@ class FixtureDataGateway implements DataGateway {
   bool _shipsHere(Offer offer) =>
       destinationCountry == null || offer.shipsTo.contains(destinationCountry);
 
-  /// [brandAd] linking only the Products that can be bought in the
-  /// Destination Country, or null when none of them can.
+  /// [brandAd] linking only the Products that have an Ad Offer shipping to
+  /// the Destination Country (the same rule that puts a Product in For You),
+  /// or null when none of them has.
   BrandAd? _linkedHere(BrandAd brandAd) {
     if (destinationCountry == null) return brandAd;
 
     final products = [
       for (final product in brandAd.products)
         if (product.offers.any(
-          (offer) => offer.isAvailable && _shipsHere(offer),
+          (offer) =>
+              offer.isAffiliate && offer.isAvailable && _shipsHere(offer),
         ))
           product,
     ];
