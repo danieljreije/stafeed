@@ -3,8 +3,6 @@ import '../../../tool/daily_summary/daily_summary.dart';
 /// An in-memory GitHub for the daily summary tests. It answers the same
 /// REST paths the real one does (with paging), and records every write.
 class FakeGitHub implements GitHubApi {
-  static const _repo = 'repos/danieljreije/stafeed';
-
   /// Sub-issues per spec number, in sub-issue order.
   final Map<int, List<Map<String, Object?>>> subIssues = {31: [], 1: []};
   final List<Map<String, Object?>> pulls = [];
@@ -21,16 +19,30 @@ class FakeGitHub implements GitHubApi {
   Future<Object?> get(String path) async {
     reads.add(path);
     final uri = Uri.parse(path);
-    if (!uri.path.startsWith('$_repo/')) {
+    if (!uri.path.startsWith('$repo/')) {
       throw StateError('Unexpected path: $path');
     }
-    final rest = uri.path.substring(_repo.length + 1);
+    final rest = uri.path.substring(repo.length + 1);
     final parts = rest.split('/');
 
     if (rest == 'pulls') return _page(pulls, uri);
     if (rest == 'issues/events') return _page(issueEvents, uri);
     if (rest == 'actions/runs') {
-      return {'total_count': failedRuns.length, 'workflow_runs': failedRuns};
+      // Like GitHub: `status` picks one conclusion, `created=>X` only
+      // returns runs that started after X.
+      final status = uri.queryParameters['status'];
+      final created = uri.queryParameters['created'];
+      final after = created != null && created.startsWith('>')
+          ? DateTime.parse(created.substring(1))
+          : null;
+      final runs = [
+        for (final run in failedRuns)
+          if (run['conclusion'] == status &&
+              (after == null ||
+                  DateTime.parse('${run['created_at']}').isAfter(after)))
+            run,
+      ];
+      return {'total_count': runs.length, 'workflow_runs': _page(runs, uri)};
     }
     if (parts.length == 3 && parts[0] == 'issues') {
       final number = int.parse(parts[1]);
@@ -97,12 +109,15 @@ Map<String, Object?> failedRun(
   String workflow, {
   required String branch,
   required String createdAt,
+  String? finishedAt,
+  String conclusion = 'failure',
 }) => {
   'id': id,
   'name': workflow,
   'head_branch': branch,
-  'conclusion': 'failure',
+  'conclusion': conclusion,
   'created_at': createdAt,
+  'updated_at': finishedAt ?? createdAt,
   'html_url': 'https://github.com/danieljreije/stafeed/actions/runs/$id',
 };
 

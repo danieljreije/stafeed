@@ -13,7 +13,7 @@ void main() {
   });
 
   Future<String> postedSummary() async {
-    await runDailySummary(github, now: now);
+    await runDailySummary(github, now: now, post: true);
     expect(github.postedComments, hasLength(1));
     expect(github.postedComments.single.issue, 1);
     return github.postedComments.single.body;
@@ -271,19 +271,84 @@ void main() {
         ),
       ]);
       github.comments[1] = [
-        comment('$summaryMarker\nNo activity.', at: '2026-11-11T06:00:00Z'),
-        comment('$summaryMarker\nNo activity.', at: '2026-11-12T06:00:30Z'),
+        comment(
+          '${summaryMarker(DateTime.utc(2026, 11, 11, 6))}\nNo activity.',
+          at: '2026-11-11T06:01:00Z',
+        ),
+        // Posted two minutes after the moment it covers up to.
+        comment(
+          '${summaryMarker(DateTime.utc(2026, 11, 12, 6))}\nNo activity.',
+          at: '2026-11-12T06:02:00Z',
+        ),
         comment('A note from the owner.', at: '2026-11-13T10:00:00Z'),
       ];
     });
 
     test('a missed day is caught up: the summary covers everything since '
-        'the last summary comment', () async {
+        'the last summary', () async {
       final body = await postedSummary();
 
       expect(body, contains('Since 2026-11-12 06:00 UTC.'));
       expect(body, contains('- #61 Merged two days ago'));
       expect(body, isNot(contains('#56')));
+    });
+
+    test('nothing falls between two summaries: a PR merged while the last '
+        'summary was being written is in this one, and one merged after '
+        'this run started is left for the next', () async {
+      github.pulls.addAll([
+        pull(
+          62,
+          'Merged while the last summary was being written',
+          branch: 'a',
+          mergedAt: '2026-11-12T06:01:00Z',
+        ),
+        pull(
+          63,
+          'Merged just after this run started',
+          branch: 'b',
+          mergedAt: '2026-11-14T06:00:05Z',
+        ),
+      ]);
+
+      final body = await postedSummary();
+
+      expect(body, contains('- #62 Merged while the last summary'));
+      expect(body, isNot(contains('#63')));
+      expect(body, startsWith(summaryMarker(now)));
+    });
+
+    test('a run counts when it fails, not when it starts, and a run that '
+        'timed out counts as failed', () async {
+      github.failedRuns.addAll([
+        failedRun(
+          911,
+          'Nightly Android check',
+          branch: 'main',
+          createdAt: '2026-11-12T05:50:00Z',
+          finishedAt: '2026-11-12T06:10:00Z',
+        ),
+        failedRun(
+          912,
+          'CI',
+          branch: 'main',
+          createdAt: '2026-11-13T12:00:00Z',
+          conclusion: 'timed_out',
+        ),
+        failedRun(
+          910,
+          'CI',
+          branch: 'old',
+          createdAt: '2026-11-12T05:00:00Z',
+          finishedAt: '2026-11-12T05:10:00Z',
+        ),
+      ]);
+
+      final body = await postedSummary();
+
+      expect(body, contains('Nightly Android check on `main`: 1 failed run'));
+      expect(body, contains('CI on `main`: 1 failed run'));
+      expect(body, isNot(contains('runs/910')));
     });
   });
 
@@ -320,7 +385,7 @@ void main() {
       final body = await runDailySummary(github, now: now, post: false);
 
       expect(github.postedComments, isEmpty);
-      expect(body, startsWith(summaryMarker));
+      expect(body, startsWith(summaryMarker(now)));
     });
   });
 }

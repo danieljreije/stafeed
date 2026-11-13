@@ -15,9 +15,13 @@ const summaryIssue = 1;
 /// (`docs/agents/orchestrator-run.md`, step 1).
 const specOrder = [31, 1];
 
-/// Hidden marker at the top of every summary comment. The next run finds the
-/// last summary by it and reports what happened since then.
-const summaryMarker = '<!-- stafeed-daily-summary -->';
+/// Hidden marker at the top of every summary comment. It records the moment
+/// the summary covers up to; the next run finds the last summary by it and
+/// reports what happened after that moment.
+String summaryMarker(DateTime until) =>
+    '$_markerStart${until.toUtc().toIso8601String()} -->';
+
+const _markerStart = '<!-- stafeed-daily-summary until=';
 
 /// The line every orchestrator PR carries in its body.
 const _orchestratorPrLine = 'Opened by the Stafeed orchestrator';
@@ -35,34 +39,37 @@ abstract interface class GitHubApi {
   Future<void> postComment(int issue, String body);
 }
 
-/// Builds the summary and, when [post] is true, posts it as one comment on
-/// spec #1. Returns the comment text either way.
+/// Builds the summary of everything after the last summary (or the last 24
+/// hours when there is none yet) up to [now] and, when [post] is true, posts
+/// it as one comment on spec #1. Returns the comment text either way.
 Future<String> runDailySummary(
   GitHubApi github, {
   required DateTime now,
-  bool post = true,
+  required bool post,
 }) async {
   final since =
       await _lastSummaryTime(github) ??
       now.toUtc().subtract(const Duration(days: 1));
+  final window = _Window(since, now.toUtc());
   final pulls = await _allPages(
     github,
     '$repo/pulls?state=all&sort=updated&direction=desc',
   );
 
-  final merged = _mergedSince(pulls, since);
-  final failed = await _failedSince(github, pulls, since);
-  final handedBack = await _handedBackSince(github, since);
+  final merged = _mergedIn(window, pulls);
+  final failed = await _failedIn(window, github, pulls);
+  final handedBack = await _handedBackIn(window, github);
   final next = await _nextUp(github, pulls);
 
+  final marker = summaryMarker(now);
   final String body;
   if (merged.isEmpty && failed.isEmpty && handedBack.isEmpty) {
-    body = '$summaryMarker\nNo activity since ${_stamp(since)}. Next: $next';
+    body = '$marker\nNo activity since ${_stamp(since)}. Next: $next';
   } else {
     String section(String heading, List<String> lines) =>
         '**$heading**\n${(lines.isEmpty ? ['none'] : lines).map((line) => '- $line').join('\n')}';
     body = [
-      '$summaryMarker\n## Daily summary, ${_stamp(now).substring(0, 10)}',
+      '$marker\n## Daily summary, ${_stamp(now).substring(0, 10)}',
       'Since ${_stamp(since)}.',
       section('Merged', merged),
       section('Failed', failed),
@@ -75,52 +82,62 @@ Future<String> runDailySummary(
   return body;
 }
 
-/// When the last summary was posted, or null when there is none yet.
+/// The moment the last summary covers up to, or null when there is none yet.
 Future<DateTime?> _lastSummaryTime(GitHubApi github) async {
   final comments = await _allPages(
     github,
-    '$repo/issues/$summaryIssue/comments?sort=created',
+    '$repo/issues/$summaryIssue/comments',
   );
   DateTime? last;
   for (final comment in comments) {
-    if (!'${comment['body'] ?? ''}'.startsWith(summaryMarker)) continue;
-    final at = _time(comment['created_at']);
-    if (at != null && (last == null || at.isAfter(last))) last = at;
+    final body = '${comment['body'] ?? ''}';
+    if (!body.startsWith(_markerStart)) continue;
+    final until = _time(body.substring(_markerStart.length).split(' ').first);
+    if (until != null && (last == null || until.isAfter(last))) last = until;
   }
   return last;
 }
 
-/// PRs merged after [since], newest first.
-List<String> _mergedSince(List<_Json> pulls, DateTime since) {
-  final merged = [
-    for (final pr in pulls)
-      if (_time(pr['merged_at'])?.isAfter(since) ?? false) pr,
-  ]..sort((a, b) => _time(b['merged_at'])!.compareTo(_time(a['merged_at'])!));
+/// PRs merged in [window], newest first.
+List<String> _mergedIn(_Window window, List<_Json> pulls) {
+  final merged = _newestFirst(window, pulls, (pr) => pr['merged_at']);
   return [for (final pr in merged) '#${pr['number']} ${pr['title']}'];
 }
 
-/// Workflow runs that failed after [since], one line per workflow and PR
-/// (or branch, when the branch has no PR), newest first.
-Future<List<String>> _failedSince(
+/// Workflow runs that failed in [window], one line per workflow and PR (or
+/// branch, when the branch has no PR), newest first.
+Future<List<String>> _failedIn(
+  _Window window,
   GitHubApi github,
   List<_Json> pulls,
-  DateTime since,
 ) async {
-  final created = Uri.encodeQueryComponent('>${since.toIso8601String()}');
-  final answer = await github.get(
-    '$repo/actions/runs?status=failure&created=$created&per_page=100',
-  ) as _Json;
-  final runs = [
-    for (final run in (answer['workflow_runs'] as List).cast<_Json>())
-      if (_time(run['created_at'])?.isAfter(since) ?? false) run,
-  ]..sort((a, b) => _time(b['created_at'])!.compareTo(_time(a['created_at'])!));
+  // A run counts when it finished, so also ask for runs that started up to
+  // a day before the window (no run lasts longer than that).
+  final created = Uri.encodeQueryComponent(
+    '>${window.since.subtract(const Duration(days: 1)).toIso8601String()}',
+  );
+  final all = <_Json>[];
+  for (final status in const ['failure', 'timed_out', 'startup_failure']) {
+    for (var page = 1; ; page++) {
+      final answer = await github.get(
+        '$repo/actions/runs?status=$status&created=$created'
+        '&per_page=100&page=$page',
+      ) as _Json;
+      final runs = (answer['workflow_runs'] as List).cast<_Json>();
+      all.addAll(runs);
+      if (runs.length < 100) break;
+    }
+  }
+  final runs = _newestFirst(
+    window,
+    all,
+    (run) => run['updated_at'] ?? run['created_at'],
+  );
 
   final groups = <String, List<_Json>>{};
   for (final run in runs) {
     final branch = '${run['head_branch']}';
-    final pr = pulls
-        .where((pr) => (pr['head'] as _Json?)?['ref'] == branch)
-        .firstOrNull;
+    final pr = pulls.where((pr) => _branch(pr) == branch).firstOrNull;
     final where = pr == null
         ? 'on `$branch`'
         : 'on PR #${pr['number']} ${pr['title']}';
@@ -133,20 +150,22 @@ Future<List<String>> _failedSince(
   ];
 }
 
-/// Tickets labelled `ready-for-human` after [since] that are still open and
+/// Tickets labelled `ready-for-human` in [window] that are still open and
 /// still carry the label, newest first.
-Future<List<String>> _handedBackSince(GitHubApi github, DateTime since) async {
+Future<List<String>> _handedBackIn(_Window window, GitHubApi github) async {
   final tickets = <int, String>{};
-  // Events come newest first: stop at the first one from before [since].
+  // Events come newest first: stop at the first one from before the window.
+  // 20 pages is 2,000 events, far more than the tracker sees between runs.
   pages:
   for (var page = 1; page <= 20; page++) {
     final events =
         await github.get('$repo/issues/events?per_page=100&page=$page') as List;
     for (final event in events.cast<_Json>()) {
       final at = _time(event['created_at']);
-      if (at != null && !at.isAfter(since)) break pages;
+      if (at != null && !at.isAfter(window.since)) break pages;
       final issue = event['issue'] as _Json?;
-      if (event['event'] != 'labeled' ||
+      if (!window.contains(at) ||
+          event['event'] != 'labeled' ||
           (event['label'] as _Json?)?['name'] != 'ready-for-human' ||
           issue == null ||
           issue['pull_request'] != null ||
@@ -161,14 +180,11 @@ Future<List<String>> _handedBackSince(GitHubApi github, DateTime since) async {
 
   final lines = <String>[];
   for (final MapEntry(key: number, value: title) in tickets.entries) {
-    final comments = await _allPages(
-      github,
-      '$repo/issues/$number/comments?sort=created',
-    );
+    final comments = await _allPages(github, '$repo/issues/$number/comments');
     final gaveUp = comments.any(
       (comment) =>
           '${comment['body'] ?? ''}'.startsWith(_gaveUpPrefix) &&
-          (_time(comment['created_at'])?.isAfter(since) ?? false),
+          window.contains(_time(comment['created_at'])),
     );
     lines.add('#$number $title${gaveUp ? ' (the orchestrator gave up)' : ''}');
   }
@@ -216,10 +232,11 @@ bool _isNext(_Json ticket, List<_Json> pulls) {
 bool _belongsTo(_Json pr, int ticket) {
   final live = pr['state'] == 'open' || pr['merged_at'] != null;
   if (!live) return false;
-  final branch = '${(pr['head'] as _Json?)?['ref'] ?? ''}';
-  return branch.contains('ticket-$ticket-') ||
+  return _branch(pr).contains('ticket-$ticket-') ||
       '${pr['title']}'.contains('(#$ticket)');
 }
+
+String _branch(_Json pr) => '${(pr['head'] as _Json?)?['ref'] ?? ''}';
 
 Set<String> _labels(_Json issue) => {
   for (final label in (issue['labels'] as List? ?? const []))
@@ -230,10 +247,38 @@ Set<String> _labels(_Json issue) => {
 Future<List<_Json>> _allPages(GitHubApi github, String path) async {
   final all = <_Json>[];
   for (var page = 1; ; page++) {
-    final items = await github.get('$path&per_page=100&page=$page') as List;
+    final separator = path.contains('?') ? '&' : '?';
+    final items =
+        await github.get('$path${separator}per_page=100&page=$page') as List;
     all.addAll(items.cast<_Json>());
     if (items.length < 100) return all;
   }
+}
+
+/// The stretch of time one summary covers: after [since], up to [until].
+class _Window {
+  const _Window(this.since, this.until);
+
+  final DateTime since;
+  final DateTime until;
+
+  bool contains(DateTime? time) =>
+      time != null && time.isAfter(since) && !time.isAfter(until);
+}
+
+/// The [items] whose time (an ISO string picked by [timeOf]) is in [window],
+/// newest first.
+List<_Json> _newestFirst(
+  _Window window,
+  List<_Json> items,
+  Object? Function(_Json item) timeOf,
+) {
+  final timed = [
+    for (final item in items)
+      if (_time(timeOf(item)) case final time? when window.contains(time))
+        (time: time, item: item),
+  ]..sort((a, b) => b.time.compareTo(a.time));
+  return [for (final entry in timed) entry.item];
 }
 
 DateTime? _time(Object? iso) => iso is String ? DateTime.tryParse(iso) : null;

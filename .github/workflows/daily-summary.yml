@@ -13,8 +13,8 @@ on:
     inputs:
       post:
         description: >-
-          Post the summary on #1. Leave off for a trial run that only prints
-          the summary in the run log.
+          Post the summary on #1 (only works on main). Leave off for a trial
+          run that only prints the summary in the run log.
         type: boolean
         default: false
 
@@ -47,11 +47,12 @@ jobs:
 
       - run: flutter pub get
 
-      # The schedule always posts; a manual run posts only when asked to.
+      # The schedule always posts; a manual run posts only when asked to,
+      # and only from `main`.
       - name: Daily summary on spec #1
         env:
           GH_TOKEN: ${{ github.token }}
-          POST: ${{ github.event_name == 'schedule' || inputs.post == true }}
+          POST: ${{ github.event_name == 'schedule' || (inputs.post == true && github.ref == 'refs/heads/main') }}
         run: |
           if [ "$POST" = "true" ]; then
             dart run tool/daily_summary.dart --post
