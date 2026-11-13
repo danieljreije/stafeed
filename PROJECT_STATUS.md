@@ -74,6 +74,14 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Not required yet: it becomes a required check on `main` once PR #53 merges.
 - Not covered because the app doesn't have it yet: the feed has no on-screen Back button (the test uses the browser's Back), and the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet).
 
+## Nightly Android check (#39)
+- Workflow: `.github/workflows/nightly-android.yml` (`Nightly Android check`). Runs every night at 03:00 UTC on `main`, and by hand (Actions → "Nightly Android check" → Run workflow). **Not a PR check**: never add it to the required checks.
+- Runs the same test as `web end-to-end` (`integration_test/shopper_journey_test.dart`) on an Android emulator (API 34, Pixel 6) on GitHub's Linux runner. Takes roughly 15–25 minutes.
+- On failure it opens an issue titled **"Nightly Android check failed"**, labelled `ready-for-agent`, with the failing test name and a link to the run log, so the orchestrator picks it up. If that issue is already open, it adds a comment instead of opening a second one. Test results are attached to each run as `android-e2e-results`.
+- Proof switch: the manual run has a **force_failure** box. It makes the test fail on purpose and opens a separate issue ("... (deliberate test failure)"), assigned to the owner so the orchestrator leaves it alone. It can't fire on the nightly schedule (it only counts when the run was started by hand).
+- Only failures on `main`, or forced failures, open an issue. A manual run on another branch just shows red.
+- Proven 2026-11-13: its first run (from this ticket's branch) found a real Android-only problem. The test tapped "Saved Products" while Android was still sliding the page in, so the tap missed. The run opened [#55](https://github.com/danieljreije/stafeed/issues/55) correctly ([run](https://github.com/danieljreije/stafeed/actions/runs/43331392758)). The test now waits until a button is fully on screen and still before tapping it, and passes on Android ([run](https://github.com/danieljreije/stafeed/actions/runs/43435394818)). The manual passing run and the forced-failure run on `main` are linked in [#39](https://github.com/danieljreije/stafeed/issues/39).
+
 ## Orchestrator (#38 dry run, #41 live)
 - Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it test-first in a worktree off `main` (under `.claude/worktrees/`), opens a PR with `PROJECT_STATUS.md` updated, turns on auto-merge and follows CI. It never weakens, skips or deletes a test to get green.
 - Give-up path: after two red attempts, any permission block, or a ticket that can't be done as written, it comments on the ticket (`Stafeed orchestrator gave up: ...`), unassigns itself, swaps `ready-for-agent` for `ready-for-human`, sends you a push notification and stops. The next run skips that ticket and takes the next one.
@@ -90,7 +98,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 
 ## Verification
 - `dart format`, `flutter analyze` (no issues), `flutter test` (72 passing, 4 golden tests skipped off Linux): passing on Windows as of #3.
-- Android build: not run since the course prototype.
+- Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
 - The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
