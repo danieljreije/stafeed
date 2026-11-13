@@ -11,11 +11,15 @@ class ProductCard extends StatelessWidget {
   final bool isSaved;
   final VoidCallback onSaveToggle;
 
+  /// Opens the Product's details. Called when the card itself is tapped.
+  final VoidCallback? onOpen;
+
   const ProductCard({
     super.key,
     required this.item,
     required this.isSaved,
     required this.onSaveToggle,
+    this.onOpen,
   });
 
   @override
@@ -30,6 +34,7 @@ class ProductCard extends StatelessWidget {
 
     return FeedCardFrame(
       media: item.media,
+      onTap: onOpen,
       details: [
         label,
         const SizedBox(height: 8),

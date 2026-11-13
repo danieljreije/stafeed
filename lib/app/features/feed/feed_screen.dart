@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../router/app_router.dart';
 
 import 'models/feed_filter.dart';
 import 'models/feed_item.dart';
 import 'models/feed_state.dart';
-import 'models/product.dart';
 import 'models/supported_filters.dart';
 import 'providers/data_gateway_provider.dart';
 import 'providers/feed_filter_provider.dart';
@@ -207,11 +209,18 @@ class _FeedPages extends ConsumerWidget {
                                 .read(savedProductsProvider.notifier)
                                 .toggleProduct(item.product.id);
                           },
+                          onOpen: () => context.push(
+                            AppRoutes.productDetails(
+                              item.product.id,
+                              offerId: item.offer.id,
+                            ),
+                          ),
                         ),
                         final BrandAd ad => BrandAdCard(
                           ad: ad,
-                          onProductTap: (product) =>
-                              _showLinkedProduct(context, product),
+                          onProductTap: (product) => context.push(
+                            AppRoutes.productDetails(product.id),
+                          ),
                         ),
                       };
                     },
@@ -242,16 +251,6 @@ class _FeedPages extends ConsumerWidget {
             );
           },
         );
-  }
-
-  /// Names the Product whose chip was tapped on a Brand Ad. Product details
-  /// (#7) will open here instead.
-  void _showLinkedProduct(BuildContext context, Product product) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text('${product.title} by ${product.brand}')),
-      );
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {
