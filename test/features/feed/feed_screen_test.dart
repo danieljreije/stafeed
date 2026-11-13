@@ -82,7 +82,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pumpAndSettle();
 
-      expect(find.text('No products available.'), findsOneWidget);
+      expect(find.text('No matches'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
       expect(find.widgetWithText(ChoiceChip, 'All'), findsOneWidget);
       expect(find.textContaining('Sample data'), findsOneWidget);
