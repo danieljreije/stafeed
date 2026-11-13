@@ -8,13 +8,13 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 
 ## Done
 - #2 — 01 Data gateway + Fixtures; DummyJSON removed (2026-11-11)
+- #3 — 02 Reliable feed: paging, stale results, retry, refresh, states (2026-11-13, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
 | #4 — 03 Feed Item kinds & labels (adds the AD label) | Local agent (Flutter) |
 | #6 — 05 App shell, onboarding & Destination Country | Local agent (Flutter) |
-| #3 — 02 Reliable feed: paging, states, retry, refresh | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
 | #15 — 14 Backend first slice | Cloud agent |
 | #26 — 25 Research: pay-per-click networks | Cloud agent |
@@ -22,6 +22,16 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 | #24 — 23 Apply to Awin; launch country | You |
 | #27 — 26 Apply for Shopify Catalog access | You |
 | #30 — 29 Final name & store IDs | You (before first store upload) |
+
+## Reliable feed (#3)
+- The feed controller (`lib/app/features/feed/providers/feed_provider.dart`) gives every list a generation number. A new filter, a retry of the first page or a successful refresh starts a new generation, and any answer asked for by an older one is dropped. So a slow request can't overwrite a newer feed, add to it, or switch off its spinner, including when the Shopper goes from filter A to B and back to A.
+- Only one load-more runs at a time. When it fails, the Feed Items and the place in the feed are kept and a **Retry loading** button shows over the feed; one tap asks once for the same page.
+- Pull down at the top of the feed to refresh. The old list stays until the new first page arrives; if the refresh fails the old list stays and a short message says so.
+- After the last Feed Item there is one quiet page ("You've seen everything for now"): no spinner, no error, no more requests.
+- Empty feed: **No matches** with a **Clear filters** button. First page failed: **Couldn't load the feed.** with **Retry**. Both show under the search box and chips, which never go away.
+- Tests: `test/features/feed/providers/feed_provider_test.dart` (controller rules) and `test/features/feed/feed_reliability_test.dart` (the screen), both on a scripted fake gateway (`test/features/feed/support/scripted_data_gateway.dart`) where the test decides the order answers arrive in.
+- Changed on purpose, because #3 asks for it: the empty-state wording ("No products available." → "No matches" + "Clear filters") in one widget test and in the web end-to-end test, and the golden images for the empty and error states.
+- Not done here: load-more only starts when the Shopper swipes (three Feed Items before the end), so a first page shorter than that waits for the first swipe.
 
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
@@ -36,7 +46,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Goldens only run on Linux (tag `golden`); on Windows `flutter test` skips them. Text uses real Roboto/Material Icons kept in `test/goldens/fonts/`.
 - When the check fails, the run's **Artifacts** has `golden-failures` with before/after/diff pictures.
 - **Intended UI change?** Add the label **`update goldens`** to the PR (or Actions → "Update goldens" → Run workflow on the PR branch). It regenerates the images on Linux, commits them to the PR branch, removes the label and re-runs CI. Look at the new images in "Files changed" before merging.
-  - GitHub doesn't start checks for commits the workflow pushes itself, so it starts CI by hand (a `workflow_dispatch` run). An extra "CI" run marked "action required" may also appear for that commit; ignore it.
+  - GitHub doesn't start checks for commits the workflow pushes itself, so it starts CI by hand (a `workflow_dispatch` run). An extra "CI" run marked "action required" also appears for that commit, and **the PR stays blocked from merging even when all checks are green**, because GitHub doesn't attach checks to the bot's commit. Fix: push one more commit to the branch (an empty one is fine: `git commit --allow-empty -m "ci: run checks on the updated golden images"`). That starts the PR's normal checks, and auto-merge goes through. The orchestrator run prompt does this itself (found in #41's first live run, PR #56).
 - Proven 2026-11-13: on PR #48 the first images were made by the label workflow, and the layout fix in that PR turned `goldens` red until the label regenerated them. Proof PR #52 (deliberate visual change: big yellow price) failed `goldens` ([run](https://github.com/danieljreije/stafeed/actions/runs/43327235490/job/131562670341)), then passed after the label regenerated the images ([run](https://github.com/danieljreije/stafeed/actions/runs/43327585924/job/131563861631)); closed unmerged.
 
 ## Main protection & auto-merge (#37)
@@ -72,15 +82,22 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Only failures on `main`, or forced failures, open an issue. A manual run on another branch just shows red.
 - Proven 2026-11-13: its first run (from this ticket's branch) found a real Android-only problem. The test tapped "Saved Products" while Android was still sliding the page in, so the tap missed. The run opened [#55](https://github.com/danieljreije/stafeed/issues/55) correctly ([run](https://github.com/danieljreije/stafeed/actions/runs/43331392758)). The test now waits until a button is fully on screen and still before tapping it, and passes on Android ([run](https://github.com/danieljreije/stafeed/actions/runs/43435394818)). The manual passing run and the forced-failure run on `main` are linked in [#39](https://github.com/danieljreije/stafeed/issues/39).
 
-## Orchestrator (#38, dry run only)
-- Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it in a worktree off `main`, opens a PR, follows CI, gives up after two red attempts or any permission block (comment, unassign, `ready-for-human`, push notification). It never weakens or deletes a test to get green.
-- Scheduled task: `stafeed-orchestrator`, prompt in `docs/agents/orchestrator-scheduled-task.md`. Dry run, no schedule (run by hand). Goes live every two hours in #41.
-- Permissions: `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh` in auto mode and disables bypass-permissions.
-- **Pause the loop:** Claude desktop app → Scheduled → `Stafeed orchestrator` → switch off.
-- Tickets whose PR merged before `main` became the default branch (#32, #34) stayed open and still block their dependants. The run prompt reports these as "done but still open"; a live run closes them. From now on `Closes #n` closes the ticket on merge.
+## Orchestrator (#38 dry run, #41 live)
+- Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it test-first in a worktree off `main` (under `.claude/worktrees/`), opens a PR with `PROJECT_STATUS.md` updated, turns on auto-merge and follows CI. It never weakens, skips or deletes a test to get green.
+- Give-up path: after two red attempts, any permission block, or a ticket that can't be done as written, it comments on the ticket (`Stafeed orchestrator gave up: ...`), unassigns itself, swaps `ready-for-agent` for `ready-for-human`, sends you a push notification and stops. The next run skips that ticket and takes the next one.
+- Scheduled task: `stafeed-orchestrator` (Claude desktop app, on this PC), prompt in `docs/agents/orchestrator-scheduled-task.md`. Auto mode, never bypass-permissions; `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh`. It only runs while the PC is on and the Claude app is open.
+- To keep the loop off a ticket (e.g. you or another session is working on it), assign it to someone: assigned tickets are skipped.
+- Tickets whose PR merged before `main` became the default branch (#32, #34) stayed open; the first live run closed them on 2026-11-13. A live run closes such "done but still open" tickets itself.
+
+### Pause and resume the loop
+- **Pause:** Claude desktop app → **Scheduled** (left sidebar) → `Stafeed orchestrator` → switch it **off**. No new runs start. A run already going finishes by itself; to stop it now, open its session (it shows under the task's runs) and press stop.
+- **Resume:** same place, switch it back **on**. The next run starts at the next even hour.
+- **Run once now:** same place → **Run now** (only while it is switched on).
+- **Back to dry runs** (reports only, writes nothing): replace the task's prompt with the dry-run prompt in `docs/agents/orchestrator-scheduled-task.md`.
+- Pausing never loses work: an open orchestrator PR is picked up again by the next run (step 0 of the run prompt).
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (33/33): passing on Windows as of #2.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (72 passing, 4 golden tests skipped off Linux): passing on Windows as of #3.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
