@@ -171,7 +171,7 @@ void main() {
     // simulated typing doesn't land after the app has cleared the box
     // itself. A real keyboard is not affected.)
     await tester.enterText(find.byType(TextField), 'zzz no such thing');
-    await waitForText(tester, 'No products available.');
+    await waitForText(tester, 'No matches');
     expect(find.byType(TextField), findsOneWidget);
     expect(find.widgetWithText(ChoiceChip, 'Watches'), findsOneWidget);
     expect(find.text('Sample data · not real products'), findsOneWidget);
@@ -180,7 +180,7 @@ void main() {
     // replaces the search...
     await tester.tap(find.widgetWithText(ChoiceChip, 'Watches'));
     await waitForCard(tester, watches.first);
-    expect(find.text('No products available.'), findsNothing);
+    expect(find.text('No matches'), findsNothing);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       isEmpty,

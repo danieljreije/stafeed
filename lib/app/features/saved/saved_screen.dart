@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stafeed/app/features/feed/models/feed_state.dart';
 import 'package:stafeed/app/features/feed/providers/feed_provider.dart';
 
 import '../feed/providers/saved_products_provider.dart';
@@ -10,19 +11,20 @@ class SavedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch both providers
-    final productsAsync = ref.watch(feedProvider);
+    final feedState = ref.watch(feedProvider);
     final savedProductsAsync = ref.watch(savedProductsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Saved')),
 
-      body: productsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+      body: switch (feedState.phase) {
+        FeedPhase.loading => const Center(child: CircularProgressIndicator()),
 
-        error: (error, stackTrace) =>
-            Center(child: Text('Failed to load products: $error')),
+        FeedPhase.failed => Center(
+          child: Text('Failed to load products: ${feedState.error}'),
+        ),
 
-        data: (feedState) {
+        FeedPhase.loaded => () {
           final products = [for (final item in feedState.items) item.product];
 
           if (products.isEmpty) {
@@ -77,8 +79,8 @@ class SavedScreen extends ConsumerWidget {
               );
             },
           );
-        },
-      ),
+        }(),
+      },
     );
   }
 }
