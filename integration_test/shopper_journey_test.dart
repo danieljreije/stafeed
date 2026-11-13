@@ -54,6 +54,27 @@ Future<void> waitForText(WidgetTester tester, String text) => waitFor(
   () => find.text(text).evaluate().isNotEmpty,
 );
 
+/// Waits until [text] is fully on screen and has stopped moving, then taps
+/// it. On Android a new page slides in, so a button can already exist while
+/// it is still partly off screen, and a tap then misses it.
+Future<void> tapText(WidgetTester tester, String text) async {
+  Rect? previous;
+  await waitFor(tester, 'text "$text" to be fully on screen and still', () {
+    final found = find.text(text);
+    if (found.evaluate().length != 1) return false;
+    final rect = tester.getRect(found);
+    final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+    final still = rect == previous;
+    previous = rect;
+    return still &&
+        rect.left >= 0 &&
+        rect.top >= 0 &&
+        rect.right <= screen.width &&
+        rect.bottom <= screen.height;
+  });
+  await tester.tap(find.text(text));
+}
+
 /// The card currently filling the feed shows [item]'s title and nothing else.
 Future<void> waitForCard(WidgetTester tester, FeedItem item) => waitFor(
   tester,
@@ -131,7 +152,7 @@ void main() {
     expect(find.text('Discover'), findsOneWidget);
 
     // For You opens on the first Fixture, labelled as sample data.
-    await tester.tap(find.text('Start Exploring'));
+    await tapText(tester, 'Start Exploring');
     await waitForCard(tester, forYou[0]);
     expect(find.text('Sample data · not real products'), findsOneWidget);
     expect(find.text(forYou[0].offer.price.format()), findsOneWidget);
@@ -156,8 +177,7 @@ void main() {
 
     // Find it in Saved.
     goBack(tester);
-    await waitForText(tester, 'Saved Products');
-    await tester.tap(find.text('Saved Products'));
+    await tapText(tester, 'Saved Products');
     await waitFor(
       tester,
       '"${saved.title}" in the Saved list',
@@ -167,8 +187,7 @@ void main() {
 
     // Back to For You, which opens at the top of the feed again.
     goBack(tester);
-    await waitForText(tester, 'Start Exploring');
-    await tester.tap(find.text('Start Exploring'));
+    await tapText(tester, 'Start Exploring');
     await waitForCard(tester, forYou[0]);
 
     // Search.
