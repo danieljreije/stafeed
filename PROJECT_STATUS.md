@@ -102,8 +102,23 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - **Back to dry runs** (reports only, writes nothing): replace the task's prompt with the dry-run prompt in `docs/agents/orchestrator-scheduled-task.md`.
 - Pausing never loses work: an open orchestrator PR is picked up again by the next run (step 0 of the run prompt).
 
+## Daily summary (#43)
+- Workflow: `.github/workflows/daily-summary.yml` (`Daily summary`). Runs every day at 06:00 UTC on `main` and posts **one comment on spec [#1](https://github.com/danieljreije/stafeed/issues/1)**, written by `github-actions[bot]`. **Not a PR check**: never add it to the required checks.
+- The comment lists, since the last summary (or the last 24 hours when there is none yet):
+  - **Merged**: PRs merged, newest first.
+  - **Failed**: failed workflow runs, one line per workflow and PR (or branch), with the count and a link to the latest run. This covers red CI on PRs and a failed Nightly Android check.
+  - **Handed to you**: tickets that got the `ready-for-human` label and are still open with it. "(the orchestrator gave up)" marks the ones it handed back.
+  - **Next**: the ticket the orchestrator takes next (same rules as step 1 of the run prompt), or the PR it continues.
+- A day with nothing merged, failed or handed back gets one short line: "No activity since …. Next: …".
+- Because it counts from the last summary, a missed day (GitHub skipped the schedule, or the run failed) is caught up by the next one.
+- It only reads the tracker. Its one write is the comment; nothing is labelled, assigned, closed or edited.
+- **Trial run:** Actions → "Daily summary" → Run workflow, with **post** left off: the summary is printed in the run log and nothing is posted. Locally: `dart run tool/daily_summary.dart` (set `GH_EXE` when `gh` is not on `PATH`); add `--post` to post.
+- Code: `tool/daily_summary/daily_summary.dart` (what goes in the summary) and `tool/daily_summary.dart` (talks to GitHub through `gh`). Tests: `test/tool/daily_summary_test.dart`, on an in-memory GitHub (`test/tool/support/fake_github.dart`).
+- Choice made by the orchestrator: spec #31 says "a once-a-day scheduled run". This is a GitHub Actions schedule, not a second Claude scheduled task on your PC, so it also runs while the PC is off and needs no setup from you.
+- Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
+
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (72 passing, 4 golden tests skipped off Linux): passing on Windows as of #3.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (84 passing, 4 golden tests skipped off Linux): passing on Windows as of #43.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
