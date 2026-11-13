@@ -47,6 +47,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - When the check fails, the run's **Artifacts** has `golden-failures` with before/after/diff pictures.
 - **Intended UI change?** Add the label **`update goldens`** to the PR (or Actions → "Update goldens" → Run workflow on the PR branch). It regenerates the images on Linux, commits them to the PR branch, removes the label and re-runs CI. Look at the new images in "Files changed" before merging.
   - GitHub doesn't start checks for commits the workflow pushes itself, so it starts CI by hand (a `workflow_dispatch` run). An extra "CI" run marked "action required" may also appear for that commit; ignore it.
+- **After the label regenerates the images, the PR needs one more ordinary push before it can merge itself.** Seen on PR #56 (2026-11-13): the CI run the workflow starts by hand was green on the new commit, but GitHub did not count it for the PR (it stayed "blocked" with auto-merge on). A normal push from the agent or you starts the usual PR checks, and then it merges.
 - Proven 2026-11-13: on PR #48 the first images were made by the label workflow, and the layout fix in that PR turned `goldens` red until the label regenerated them. Proof PR #52 (deliberate visual change: big yellow price) failed `goldens` ([run](https://github.com/danieljreije/stafeed/actions/runs/43327235490/job/131562670341)), then passed after the label regenerated the images ([run](https://github.com/danieljreije/stafeed/actions/runs/43327585924/job/131563861631)); closed unmerged.
 
 ## Main protection & auto-merge (#37)
