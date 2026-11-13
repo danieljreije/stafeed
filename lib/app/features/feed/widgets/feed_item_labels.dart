@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_name.dart';
+
 /// The bold AD label every Ad carries, with "Sponsored" beside it when a
 /// Brand or Merchant pays Stafeed directly.
 class AdLabel extends StatelessWidget {
@@ -53,10 +55,10 @@ class FeedItemNote extends StatelessWidget {
   const FeedItemNote(this.text, {super.key});
 
   /// On every Affiliate Ad.
-  static const affiliate = 'Stafeed may earn a commission';
+  static const affiliate = '$appName may earn a commission';
 
   /// On every Not an Ad Feed Item.
-  static const notAnAd = 'Stafeed earns nothing on this one';
+  static const notAnAd = '$appName earns nothing on this one';
 
   final String text;
 

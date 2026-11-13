@@ -6,6 +6,9 @@ import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
 import 'package:stafeed/app/features/feed/models/media.dart';
+import 'package:stafeed/app/features/feed/models/money.dart';
+import 'package:stafeed/app/features/feed/models/offer.dart';
+import 'package:stafeed/app/features/feed/models/product.dart';
 
 /// Walks every page of a feed through the gateway, following its cursors.
 Future<List<FeedItem>> readWholeFeed(
@@ -382,6 +385,305 @@ void main() {
       final page = await gateway.getFeedPage();
 
       expect(int.tryParse(page.nextCursor!.token), isNull);
+    });
+  });
+
+  group('Destination Country', () {
+    const countries = ['US', 'GB', 'AE', 'LB'];
+
+    Product product(String id, List<Offer> offers) => Product(
+      id: id,
+      title: 'Product $id',
+      description: '',
+      brand: 'Brand',
+      category: 'sneakers',
+      imageUrls: const [],
+      offers: offers,
+    );
+
+    Offer offer(
+      String id,
+      Set<String> shipsTo, {
+      bool isAffiliate = true,
+      bool isAvailable = true,
+    }) => Offer(
+      id: id,
+      merchant: 'Merchant $id',
+      price: const Money(1000, 'USD'),
+      shipsTo: shipsTo,
+      url: Uri.https('example.com', '/$id'),
+      isAffiliate: isAffiliate,
+      isAvailable: isAvailable,
+    );
+
+    bool hasAdOfferIn(Product product, String country) => product.offers.any(
+      (offer) =>
+          offer.isAffiliate &&
+          offer.isAvailable &&
+          offer.shipsTo.contains(country),
+    );
+
+    test('every Offer in the feed ships there, for each country', () async {
+      for (final country in countries) {
+        final items = await readWholeFeed(
+          FixtureDataGateway(destinationCountry: country),
+        );
+        final offers = items.whereType<ProductFeedItem>().map((i) => i.offer);
+
+        expect(offers, isNotEmpty, reason: country);
+        expect(
+          offers.every((offer) => offer.shipsTo.contains(country)),
+          isTrue,
+          reason: country,
+        );
+      }
+    });
+
+    test(
+      'holds exactly the Fixtures with an Ad Offer that ships there',
+      () async {
+        for (final country in countries) {
+          final items = await readWholeFeed(
+            FixtureDataGateway(destinationCountry: country),
+          );
+          final expected = [
+            for (final product in fixtureProducts)
+              if (product.offers.any(
+                (offer) =>
+                    offer.isAffiliate &&
+                    offer.isAvailable &&
+                    offer.shipsTo.contains(country),
+              ))
+                product.id,
+          ];
+
+          expect(
+            items.whereType<AffiliateAd>().map((i) => i.product.id),
+            expected,
+            reason: country,
+          );
+          // The Fixtures really do differ by country, so this proves something.
+          expect(expected.length, lessThan(fixtureProducts.length));
+        }
+      },
+    );
+
+    test('countries get different feeds', () async {
+      final feeds = <String>{};
+      for (final country in countries) {
+        final items = await readWholeFeed(
+          FixtureDataGateway(destinationCountry: country),
+        );
+        feeds.add(items.map((i) => i.id).join(','));
+      }
+
+      expect(feeds.length, greaterThan(1));
+    });
+
+    test('still pages through every Feed Item exactly once', () async {
+      final items = await readWholeFeed(
+        FixtureDataGateway(destinationCountry: 'GB'),
+      );
+      final ids = items.map((i) => i.id).toList();
+
+      expect(ids.toSet(), hasLength(ids.length));
+      expect(ids.length, greaterThan(FixtureDataGateway.defaultPageSize));
+    });
+
+    test('without a Destination Country every Fixture is served', () async {
+      final everything = await readWholeFeed(FixtureDataGateway());
+      final gb = await readWholeFeed(
+        FixtureDataGateway(destinationCountry: 'GB'),
+      );
+
+      expect(gb.length, lessThan(everything.length));
+    });
+
+    test('the country code is read in any letter case', () async {
+      final lower = await readWholeFeed(
+        FixtureDataGateway(destinationCountry: 'gb'),
+      );
+      final upper = await readWholeFeed(
+        FixtureDataGateway(destinationCountry: 'GB'),
+      );
+
+      expect(lower.map((i) => i.id), upper.map((i) => i.id));
+      expect(lower, isNotEmpty);
+    });
+
+    test("shows a Product's first Offer that ships there", () async {
+      final gateway = FixtureDataGateway(
+        products: [
+          product('two-offers', [
+            offer('uk', {'GB'}),
+            offer('us', {'US'}),
+          ]),
+        ],
+        brandAds: const [],
+        destinationCountry: 'US',
+      );
+
+      final item = (await readWholeFeed(gateway)).single as AffiliateAd;
+
+      expect(item.offer.id, 'us');
+    });
+
+    test('leaves out a Product whose only Offer shipping there '
+        'is unavailable or earns nothing', () async {
+      final gateway = FixtureDataGateway(
+        products: [
+          product('sold-out-here', [
+            offer('us', {'US'}, isAvailable: false),
+            offer('uk', {'GB'}),
+          ]),
+          product('not-an-ad-here', [
+            offer('us-free', {'US'}, isAffiliate: false),
+            offer('uk-paid', {'GB'}),
+          ]),
+          product('ships', [
+            offer('us-ok', {'US'}),
+          ]),
+        ],
+        brandAds: const [],
+        destinationCountry: 'US',
+      );
+
+      final items = await readWholeFeed(gateway);
+
+      expect(items.map((i) => i.id), ['ships']);
+    });
+
+    test('a Brand Ad only links Products with an Ad Offer there', () async {
+      for (final country in countries) {
+        final items = await readWholeFeed(
+          FixtureDataGateway(destinationCountry: country),
+        );
+
+        for (final ad in items.whereType<BrandAd>()) {
+          expect(ad.products, isNotEmpty, reason: '${ad.id} in $country');
+          expect(
+            ad.products.every((p) => hasAdOfferIn(p, country)),
+            isTrue,
+            reason: '${ad.id} in $country',
+          );
+        }
+      }
+    });
+
+    test('a Brand Ad keeps its words and pictures when a linked Product '
+        'is dropped', () async {
+      final here = product('here', [
+        offer('here', {'US'}),
+      ]);
+      final elsewhere = product('elsewhere', [
+        offer('elsewhere', {'GB'}),
+      ]);
+      final supplied = BrandAd(
+        id: 'ad',
+        brand: 'Maker',
+        headline: 'As supplied',
+        media: const [ImageMedia('https://example.com/ad.jpg')],
+        products: [here, elsewhere],
+      );
+      final gateway = FixtureDataGateway(
+        products: [here, elsewhere],
+        brandAds: [supplied],
+        destinationCountry: 'US',
+      );
+
+      final ad = (await readWholeFeed(gateway)).whereType<BrandAd>().single;
+
+      expect(ad.id, supplied.id);
+      expect(ad.brand, supplied.brand);
+      expect(ad.headline, supplied.headline);
+      expect(ad.media, supplied.media);
+      expect(ad.products, [here]);
+    });
+
+    test('a Brand Ad with no Product to buy there is left out', () async {
+      final elsewhere = product('elsewhere', [
+        offer('elsewhere', {'GB'}),
+        // Ships here, but earns nothing: not in For You, so not linked.
+        offer('free-here', {'US'}, isAffiliate: false),
+        offer('gone-here', {'US'}, isAvailable: false),
+      ]);
+      final gateway = FixtureDataGateway(
+        products: [elsewhere],
+        brandAds: [
+          BrandAd(
+            id: 'ad',
+            brand: 'Maker',
+            headline: 'Not for here',
+            media: const [],
+            products: [elsewhere],
+          ),
+        ],
+        destinationCountry: 'US',
+      );
+
+      expect(await readWholeFeed(gateway), isEmpty);
+    });
+
+    test(
+      'category chips only list categories with something to show',
+      () async {
+        final gateway = FixtureDataGateway(
+          products: [
+            product('sneaker', [
+              offer('a', {'US'}),
+            ]),
+            Product(
+              id: 'bag',
+              title: 'Bag',
+              description: '',
+              brand: 'Brand',
+              category: 'bags',
+              imageUrls: const [],
+              offers: [
+                offer('b', {'GB'}),
+              ],
+            ),
+          ],
+          brandAds: const [],
+          destinationCountry: 'US',
+        );
+
+        final filters = await gateway.getSupportedFilters();
+
+        expect(filters.categories.map((c) => c.id), ['sneakers']);
+      },
+    );
+
+    test('search and category filters stay inside the country', () async {
+      final gateway = FixtureDataGateway(destinationCountry: 'LB');
+
+      final sneakers = await readWholeFeed(
+        gateway,
+        filter: const FeedFilter(category: 'sneakers'),
+      );
+      final searched = await readWholeFeed(
+        gateway,
+        filter: const FeedFilter(query: 'runner'),
+      );
+
+      for (final item in [...sneakers, ...searched]) {
+        if (item is ProductFeedItem) {
+          expect(item.offer.shipsTo, contains('LB'), reason: item.id);
+        }
+      }
+      expect(sneakers, isNotEmpty);
+    });
+
+    test('a cursor from one country is rejected for another', () async {
+      final page = await FixtureDataGateway(destinationCountry: 'US')
+          .getFeedPage();
+      expect(page.nextCursor, isNotNull);
+
+      await expectLater(
+        FixtureDataGateway(destinationCountry: 'GB')
+            .getFeedPage(cursor: page.nextCursor),
+        throwsArgumentError,
+      );
     });
   });
 }

@@ -64,11 +64,17 @@ class SavedScreen extends ConsumerWidget {
                   return ListTile(
                     leading: product.imageUrls.isEmpty
                         ? null
-                        : Image.network(
-                            product.imageUrls.first,
+                        // A fixed box, so a picture that fails to load
+                        // (offline, say) can't take over the whole row.
+                        : SizedBox(
                             width: 60,
                             height: 60,
-                            fit: BoxFit.cover,
+                            child: Image.network(
+                              product.imageUrls.first,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.broken_image_outlined),
+                            ),
                           ),
                     title: Text(product.title),
                     subtitle: Text(product.brand),

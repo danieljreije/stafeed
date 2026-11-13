@@ -4,6 +4,7 @@ import 'dart:math';
 import '../models/feed_filter.dart';
 import '../models/feed_item.dart';
 import '../models/feed_page.dart';
+import '../models/offer.dart';
 import '../models/product.dart';
 import '../models/supported_filters.dart';
 import 'data_gateway.dart';
@@ -15,13 +16,20 @@ import 'fixtures/fixture_products.dart';
 /// For You only takes Ads, so Products without an available affiliate Offer
 /// (Not an Ad) are left out of the feed. Each Brand Ad comes right after the
 /// last of its linked Products in the feed.
+///
+/// Given a Destination Country, it never serves an Offer that doesn't ship
+/// there: each Affiliate Ad shows the Product's first Offer that does, a
+/// Product with none is left out, and a Brand Ad only links the Products
+/// still in the feed there (and is left out when there are none).
 class FixtureDataGateway implements DataGateway {
   FixtureDataGateway({
     List<Product>? products,
     List<BrandAd>? brandAds,
     List<ProductCategory>? categories,
     this.pageSize = defaultPageSize,
-  }) : _products = products ?? fixtureProducts,
+    String? destinationCountry,
+  }) : destinationCountry = destinationCountry?.toUpperCase(),
+       _products = products ?? fixtureProducts,
        _brandAds = brandAds ?? fixtureBrandAds,
        _categories = categories ?? fixtureCategories;
 
@@ -32,6 +40,10 @@ class FixtureDataGateway implements DataGateway {
   final List<BrandAd> _brandAds;
   final List<ProductCategory> _categories;
   final int pageSize;
+
+  /// ISO 3166-1 alpha-2 code of the Shopper's Destination Country. Null
+  /// (no Shopper yet) serves every Fixture.
+  final String? destinationCountry;
 
   @override
   bool get servesSampleData => true;
@@ -78,14 +90,17 @@ class FixtureDataGateway implements DataGateway {
 
     for (final product in _products) {
       for (final offer in product.offers) {
-        if (offer.isAffiliate && offer.isAvailable) {
+        if (offer.isAffiliate && offer.isAvailable && _shipsHere(offer)) {
           items.add(AffiliateAd(product: product, offer: offer));
           break;
         }
       }
     }
 
-    for (final brandAd in _brandAds) {
+    for (final supplied in _brandAds) {
+      final brandAd = _linkedHere(supplied);
+      if (brandAd == null) continue;
+
       final linked = {for (final product in brandAd.products) product.id};
       final lastLinked = items.lastIndexWhere(
         (item) => item is AffiliateAd && linked.contains(item.product.id),
@@ -97,6 +112,35 @@ class FixtureDataGateway implements DataGateway {
     }
 
     return items;
+  }
+
+  bool _shipsHere(Offer offer) =>
+      destinationCountry == null || offer.shipsTo.contains(destinationCountry);
+
+  /// [brandAd] linking only the Products that have an Ad Offer shipping to
+  /// the Destination Country (the same rule that puts a Product in For You),
+  /// or null when none of them has.
+  BrandAd? _linkedHere(BrandAd brandAd) {
+    if (destinationCountry == null) return brandAd;
+
+    final products = [
+      for (final product in brandAd.products)
+        if (product.offers.any(
+          (offer) =>
+              offer.isAffiliate && offer.isAvailable && _shipsHere(offer),
+        ))
+          product,
+    ];
+    if (products.isEmpty) return null;
+    if (products.length == brandAd.products.length) return brandAd;
+
+    return BrandAd(
+      id: brandAd.id,
+      brand: brandAd.brand,
+      headline: brandAd.headline,
+      media: brandAd.media,
+      products: products,
+    );
   }
 
   /// A Brand Ad matches through its own Brand and headline, and through any
@@ -141,8 +185,11 @@ class FixtureDataGateway implements DataGateway {
       .where((word) => word.isNotEmpty)
       .toList();
 
-  static String _fingerprint(FeedFilter filter) =>
-      '${filter.category ?? ''}|${_words(filter.query).join(' ')}';
+  /// A cursor only continues the feed it came from: same Destination
+  /// Country, category and search.
+  String _fingerprint(FeedFilter filter) =>
+      '${destinationCountry ?? ''}|${filter.category ?? ''}|'
+      '${_words(filter.query).join(' ')}';
 
   static FeedCursor _writeCursor(int offset, String fingerprint) {
     final payload = jsonEncode({'o': offset, 'f': fingerprint});
