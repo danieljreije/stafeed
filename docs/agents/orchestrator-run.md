@@ -105,7 +105,15 @@ Push the branch and open a PR to `main`:
 
 **Turn on auto-merge right after opening the PR** (`gh pr merge <pr> --auto --merge`), then confirm it took: `gh pr view <pr> --json autoMergeRequest` must not be `null`. Branch protection (#37) merges the PR once every required check is green (`format, analyze, test`, `goldens`, `web end-to-end`). No human approves it. Never use `--admin`.
 
-Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log (`gh run view <run-id> --log-failed`), fix the cause in the same worktree, push. A `goldens` failure from a UI change the ticket asks for: add the `update goldens` label and look at the new images; any other `goldens` failure is a bug to fix. When the PR merges, check the ticket closed (`Closes #<n>` does it); if not, close it with a comment naming the PR.
+Follow the checks (`gh pr checks <pr> --watch`). When CI is red, read the failing log (`gh run view <run-id> --log-failed`), fix the cause in the same worktree, push. A `goldens` failure from a UI change the ticket asks for: add the `update goldens` label and wait for that workflow to finish; any other `goldens` failure is a bug to fix. The workflow commits the new images as `github-actions[bot]`, and GitHub won't attach the PR's checks to a bot commit (its CI run shows "action required"), so **auto-merge stays blocked even when every check is green**. To unblock it:
+
+```bash
+git pull --ff-only                       # get the bot's image commit
+git commit --allow-empty -m "ci: run checks on the updated golden images"
+git push
+```
+
+Before pushing, look at the new images (`git show --stat HEAD~1`, then open the changed PNGs) and check that they show the change the ticket asks for and nothing else. That push starts the PR's own CI; it doesn't count as a failed attempt. When the PR merges, check the ticket closed (`Closes #<n>` does it); if not, close it with a comment naming the PR.
 
 Finish by removing the worktree (`git worktree remove .claude/worktrees/orchestrator-ticket-<n>` from the owner's checkout) and printing a short live report: ticket, PR link, merged or not, tickets closed as done-but-open. One ticket per run: stop there.
 
