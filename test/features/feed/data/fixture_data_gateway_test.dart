@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
+import 'package:stafeed/app/features/feed/data/fixtures/fixture_brand_ads.dart';
+import 'package:stafeed/app/features/feed/data/fixtures/fixture_products.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
+import 'package:stafeed/app/features/feed/models/media.dart';
 
 /// Walks every page of a feed through the gateway, following its cursors.
 Future<List<FeedItem>> readWholeFeed(
@@ -58,9 +61,13 @@ void main() {
       () async {
         final items = await readWholeFeed(gateway);
 
-        final brands = items.map((i) => i.product.brand).toSet();
-        final currencies = items.map((i) => i.offer.price.currencyCode).toSet();
-        final shipsTo = items.map((i) => i.offer.shipsTo).toSet();
+        final affiliateAds = items.whereType<AffiliateAd>();
+
+        final brands = affiliateAds.map((i) => i.product.brand).toSet();
+        final currencies = affiliateAds
+            .map((i) => i.offer.price.currencyCode)
+            .toSet();
+        final shipsTo = affiliateAds.map((i) => i.offer.shipsTo).toSet();
 
         expect(brands.length, greaterThanOrEqualTo(8));
         expect(currencies, {'USD', 'GBP'});
@@ -83,7 +90,7 @@ void main() {
 
     test('pages through every Ad exactly once, then ends', () async {
       final items = await readWholeFeed(gateway);
-      final ids = items.map((i) => i.product.id).toList();
+      final ids = items.map((i) => i.id).toList();
 
       expect(ids.toSet(), hasLength(ids.length), reason: 'no repeats');
       expect(items.length, inInclusiveRange(48, 56));
@@ -93,23 +100,27 @@ void main() {
     test('never includes Not an Ad Products', () async {
       final items = await readWholeFeed(gateway);
 
-      expect(items.any((item) => !item.offer.isAffiliate), isFalse);
+      expect(items.whereType<NotAnAd>(), isEmpty);
+      expect(
+        items.whereType<ProductFeedItem>().any((i) => !i.offer.isAffiliate),
+        isFalse,
+      );
     });
 
     test('only offers that are available', () async {
       final items = await readWholeFeed(gateway);
 
-      expect(items.every((item) => item.offer.isAvailable), isTrue);
+      expect(
+        items.whereType<ProductFeedItem>().every((i) => i.offer.isAvailable),
+        isTrue,
+      );
     });
 
     test('is deterministic across gateway instances', () async {
       final first = await readWholeFeed(FixtureDataGateway());
       final second = await readWholeFeed(FixtureDataGateway());
 
-      expect(
-        first.map((i) => i.product.id).toList(),
-        second.map((i) => i.product.id).toList(),
-      );
+      expect(first.map((i) => i.id).toList(), second.map((i) => i.id).toList());
     });
 
     test('asking for the same cursor twice returns the same page', () async {
@@ -119,10 +130,7 @@ void main() {
       final once = await gateway.getFeedPage(cursor: cursor);
       final twice = await gateway.getFeedPage(cursor: cursor);
 
-      expect(
-        once.items.map((i) => i.product.id),
-        twice.items.map((i) => i.product.id),
-      );
+      expect(once.items.map((i) => i.id), twice.items.map((i) => i.id));
       expect(once.nextCursor, twice.nextCursor);
     });
 
@@ -134,11 +142,117 @@ void main() {
       final whole = await readWholeFeed(gateway);
 
       expect(
-        [...firstPage.items, ...secondPage.items].map((i) => i.product.id),
+        [...firstPage.items, ...secondPage.items].map((i) => i.id),
         whole
             .take(firstPage.items.length + secondPage.items.length)
-            .map((i) => i.product.id),
+            .map((i) => i.id),
       );
+    });
+  });
+
+  group('Brand Ads', () {
+    test('the Fixtures include 2 to 3 Brand Ads, all images', () async {
+      final ads = (await readWholeFeed(gateway)).whereType<BrandAd>().toList();
+
+      expect(ads.length, inInclusiveRange(2, 3));
+      expect(ads.map((ad) => ad.id), fixtureBrandAds.map((ad) => ad.id));
+      for (final ad in ads) {
+        expect(ad.isSponsored, isTrue);
+        expect(ad.media, isNotEmpty);
+        expect(ad.media, everyElement(isA<ImageMedia>()));
+        expect(ad.products, isNotEmpty);
+      }
+    });
+
+    test('at least one has several images to swipe through', () {
+      expect(fixtureBrandAds.any((ad) => ad.media.length > 1), isTrue);
+    });
+
+    test('each links Products that are in the feed themselves', () async {
+      final items = await readWholeFeed(gateway);
+      final affiliateProductIds = {
+        for (final item in items.whereType<AffiliateAd>()) item.product.id,
+      };
+
+      for (final ad in items.whereType<BrandAd>()) {
+        expect(
+          ad.products.map((p) => p.id),
+          everyElement(isIn(affiliateProductIds)),
+          reason: ad.id,
+        );
+      }
+    });
+
+    test('each comes right after the last of its linked Products', () async {
+      final items = await readWholeFeed(gateway);
+
+      for (final ad in items.whereType<BrandAd>()) {
+        final before = items[items.indexOf(ad) - 1];
+
+        expect(before, isA<AffiliateAd>(), reason: ad.id);
+        expect(before.id, ad.products.last.id, reason: ad.id);
+      }
+    });
+
+    test('the feed opens on three Affiliate Ads', () async {
+      final page = await gateway.getFeedPage();
+
+      expect(page.items.take(3), everyElement(isA<AffiliateAd>()));
+    });
+
+    test(
+      'a category filter keeps a Brand Ad linked to that category',
+      () async {
+        final ad = fixtureBrandAds.first;
+        final category = ad.products.first.category;
+        final other = fixtureCategories
+            .map((c) => c.id)
+            .firstWhere((id) => ad.products.every((p) => p.category != id));
+
+        final inCategory = await readWholeFeed(
+          gateway,
+          filter: FeedFilter(category: category),
+        );
+        final elsewhere = await readWholeFeed(
+          gateway,
+          filter: FeedFilter(category: other),
+        );
+
+        expect(inCategory.map((i) => i.id), contains(ad.id));
+        expect(elsewhere.map((i) => i.id), isNot(contains(ad.id)));
+      },
+    );
+
+    test('search finds a Brand Ad by its Brand and by its headline', () async {
+      final ad = fixtureBrandAds.first;
+
+      final byBrand = await readWholeFeed(
+        gateway,
+        filter: FeedFilter(query: ad.brand.toUpperCase()),
+      );
+      final byHeadline = await readWholeFeed(
+        gateway,
+        filter: FeedFilter(query: ad.headline),
+      );
+
+      expect(byBrand.map((i) => i.id), contains(ad.id));
+      expect(byHeadline.map((i) => i.id), [ad.id]);
+    });
+
+    test('a Brand Ad whose Products are not in the feed goes last', () async {
+      final unlinked = BrandAd(
+        id: 'unlinked',
+        brand: 'Nobody',
+        headline: 'Nothing to see',
+        media: const [],
+        products: const [],
+      );
+      final items = await readWholeFeed(
+        FixtureDataGateway(brandAds: [unlinked]),
+      );
+
+      expect(items.last, same(unlinked));
+      expect(items.whereType<BrandAd>(), hasLength(1));
     });
   });
 
@@ -150,7 +264,10 @@ void main() {
       );
 
       expect(items, isNotEmpty);
-      expect(items.every((i) => i.product.category == 'watches'), isTrue);
+      expect(
+        items.every((i) => i.products.any((p) => p.category == 'watches')),
+        isTrue,
+      );
     });
 
     test('sneakers span several pages', () async {
@@ -179,7 +296,7 @@ void main() {
   group('Search', () {
     test('matches title, Brand and category, ignoring case', () async {
       final everything = await readWholeFeed(gateway);
-      final someItem = everything[3];
+      final someItem = everything[3] as AffiliateAd;
 
       final byTitle = await readWholeFeed(
         gateway,
@@ -194,13 +311,21 @@ void main() {
         filter: const FeedFilter(query: 'sneakers'),
       );
 
-      expect(byTitle.map((i) => i.product.id), contains(someItem.product.id));
+      expect(byTitle.map((i) => i.id), contains(someItem.id));
+      expect(byBrand, isNotEmpty);
       expect(
-        byBrand.every((i) => i.product.brand == someItem.product.brand),
+        byBrand.every(
+          (i) => i.products.any((p) => p.brand == someItem.product.brand),
+        ),
         isTrue,
       );
       expect(byCategory, isNotEmpty);
-      expect(byCategory.every((i) => i.product.category == 'sneakers'), isTrue);
+      expect(
+        byCategory.every(
+          (i) => i.products.any((p) => p.category == 'sneakers'),
+        ),
+        isTrue,
+      );
     });
 
     test('needs every word to match', () async {
@@ -212,9 +337,10 @@ void main() {
       expect(items, isNotEmpty);
       expect(
         items.every(
-          (i) =>
-              i.product.category == 'sneakers' &&
-              i.product.attributes['style'] == 'Running',
+          (i) => i.products.any(
+            (p) =>
+                p.category == 'sneakers' && p.attributes['style'] == 'Running',
+          ),
         ),
         isTrue,
       );

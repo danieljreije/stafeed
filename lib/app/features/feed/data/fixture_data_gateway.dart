@@ -7,24 +7,29 @@ import '../models/feed_page.dart';
 import '../models/product.dart';
 import '../models/supported_filters.dart';
 import 'data_gateway.dart';
+import 'fixtures/fixture_brand_ads.dart';
 import 'fixtures/fixture_products.dart';
 
 /// Serves the Fixtures offline and deterministically.
 ///
 /// For You only takes Ads, so Products without an available affiliate Offer
-/// (Not an Ad) are left out of the feed.
+/// (Not an Ad) are left out of the feed. Each Brand Ad comes right after the
+/// last of its linked Products in the feed.
 class FixtureDataGateway implements DataGateway {
   FixtureDataGateway({
     List<Product>? products,
+    List<BrandAd>? brandAds,
     List<ProductCategory>? categories,
     this.pageSize = defaultPageSize,
   }) : _products = products ?? fixtureProducts,
+       _brandAds = brandAds ?? fixtureBrandAds,
        _categories = categories ?? fixtureCategories;
 
   static const int defaultPageSize = 10;
   static const String _cursorPrefix = 'fx1.';
 
   final List<Product> _products;
+  final List<BrandAd> _brandAds;
   final List<ProductCategory> _categories;
   final int pageSize;
 
@@ -33,7 +38,10 @@ class FixtureDataGateway implements DataGateway {
 
   @override
   Future<SupportedFilters> getSupportedFilters() async {
-    final used = _forYou().map((item) => item.product.category).toSet();
+    final used = {
+      for (final item in _forYou())
+        for (final product in item.products) product.category,
+    };
 
     return SupportedFilters(
       categories: [
@@ -62,22 +70,42 @@ class FixtureDataGateway implements DataGateway {
     );
   }
 
-  /// Every Product that can appear in For You, with its chosen Offer.
-  Iterable<FeedItem> _forYou() sync* {
+  /// Every Feed Item in For You, in order: each Product that has an
+  /// available affiliate Offer, as an Affiliate Ad with that Offer, and the
+  /// Brand Ads.
+  List<FeedItem> _forYou() {
+    final items = <FeedItem>[];
+
     for (final product in _products) {
       for (final offer in product.offers) {
         if (offer.isAffiliate && offer.isAvailable) {
-          yield FeedItem(product: product, offer: offer);
+          items.add(AffiliateAd(product: product, offer: offer));
           break;
         }
       }
     }
+
+    for (final brandAd in _brandAds) {
+      final linked = {for (final product in brandAd.products) product.id};
+      final lastLinked = items.lastIndexWhere(
+        (item) => item is AffiliateAd && linked.contains(item.product.id),
+      );
+
+      // After the last of its linked Products; at the end when none of them
+      // is in the feed.
+      items.insert(lastLinked < 0 ? items.length : lastLinked + 1, brandAd);
+    }
+
+    return items;
   }
 
+  /// A Brand Ad matches through its own Brand and headline, and through any
+  /// Product it links to.
   bool _matches(FeedItem item, FeedFilter filter) {
-    final product = item.product;
+    final products = item.products;
 
-    if (filter.category != null && product.category != filter.category) {
+    if (filter.category != null &&
+        !products.any((product) => product.category == filter.category)) {
       return false;
     }
 
@@ -85,10 +113,16 @@ class FixtureDataGateway implements DataGateway {
     if (words.isEmpty) return true;
 
     final haystack = [
-      product.title,
-      product.brand,
-      _categoryLabel(product.category),
-      ...product.attributes.values,
+      if (item case BrandAd(:final brand, :final headline)) ...[
+        brand,
+        headline,
+      ],
+      for (final product in products) ...[
+        product.title,
+        product.brand,
+        _categoryLabel(product.category),
+        ...product.attributes.values,
+      ],
     ].join(' ').toLowerCase();
 
     return words.every(haystack.contains);

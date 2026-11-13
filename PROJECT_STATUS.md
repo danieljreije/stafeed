@@ -9,11 +9,11 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 ## Done
 - #2 — 01 Data gateway + Fixtures; DummyJSON removed (2026-11-11)
 - #3 — 02 Reliable feed: paging, stale results, retry, refresh, states (2026-11-13, built by the orchestrator)
+- #4 — 03 Feed Item kinds & labels: AD label, Brand Ads, Not an Ad (2026-11-13, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
-| #4 — 03 Feed Item kinds & labels (adds the AD label) | Local agent (Flutter) |
 | #6 — 05 App shell, onboarding & Destination Country | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
 | #15 — 14 Backend first slice | Cloud agent |
@@ -33,6 +33,23 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Changed on purpose, because #3 asks for it: the empty-state wording ("No products available." → "No matches" + "Clear filters") in one widget test and in the web end-to-end test, and the golden images for the empty and error states.
 - Not done here: load-more only starts when the Shopper swipes (three Feed Items before the end), so a first page shorter than that waits for the first swipe.
 
+## Feed Item kinds & labels (#4)
+- A Feed Item is now exactly one of three kinds (`lib/app/features/feed/models/feed_item.dart`): **Affiliate Ad** (one Product + one Offer), **Brand Ad** (its own media and words, linked Products) or **Not an Ad** (a Product whose Offer earns Stafeed nothing). The code can't add a fourth kind without deciding how it is labelled.
+- Labels on the cards:
+  - Every Ad has a bold **AD** badge. A Brand Ad also says **Sponsored**.
+  - An Affiliate Ad says "Stafeed may earn a commission" under the price.
+  - Not an Ad has a **NOT AN AD** badge and "Stafeed earns nothing on this one".
+- A Brand Ad shows its Brand, its headline and one chip per linked Product. Tapping a chip shows a short message naming that Product. Product details (#7) will open there instead. A Brand Ad has no Save button.
+- Media: each Feed Item has a list of images and videos (`models/media.dart`). Several pictures are swiped through sideways, with dots showing the place. Video isn't played yet: its poster image stands in, or a video icon when there is none. A picture that fails to load shows a broken-image icon.
+- Fixtures: 3 image-only Brand Ads (`data/fixtures/fixture_brand_ads.dart`), by the invented Brands Northstar, Orbitline and Brightmoor. In the Fixture feed each comes right after the last of its linked Products, so For You still opens on Affiliate Ads. A category filter or a search finds a Brand Ad through its Brand, its headline or its linked Products.
+- Not an Ad never appears in For You. It has a card and tests, ready for Shopping Sessions (#11).
+- Tests: `test/features/feed/widgets/feed_item_cards_test.dart` (labels, chips, carousel, fallbacks, each kind inside the feed), `test/features/feed/models/feed_item_test.dart` (the kinds and their media), new Brand Ad tests in `test/features/feed/data/fixture_data_gateway_test.dart`, and golden images for the Brand Ad and Not an Ad cards.
+- Changed on purpose, because #4 changes what a Feed Item is:
+  - Existing tests that read `item.product` or `item.offer` off any Feed Item now say which kind they mean (Affiliate Ad), or ask for the Feed Item's Products. They check the same things as before.
+  - The web end-to-end test also checks the AD label and the commission note on the first card.
+  - The Affiliate Ad golden image is regenerated (it gains the AD badge and the note).
+- Choices made by the orchestrator: the wording of the Not an Ad note; white AD badge; chips show the Product's title; where Brand Ads sit in the Fixture feed.
+
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required checks on `main` (branch protection, #37): **`format, analyze, test`** and **`goldens`** (#35, required since 2026-11-13). The first is shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
@@ -41,7 +58,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - **`web end-to-end`** (#36) also runs on every PR. It becomes required once PR #53 merges. Each check has its own section below.
 
 ## Golden check (#35)
-- Golden (screenshot) tests: `test/goldens/feed_goldens_test.dart`, images in `test/goldens/goldens/`. They start the whole app on Fixtures (through `dataGatewayProvider`) and cover each Feed Item kind in the app today (Affiliate Ad) plus the loading, empty and error feed states, with the search field, chips and sample-data marker visible.
+- Golden (screenshot) tests: `test/goldens/feed_goldens_test.dart`, images in `test/goldens/goldens/`. They start the whole app on Fixtures (through `dataGatewayProvider`) and cover each Feed Item kind (Affiliate Ad, Brand Ad, Not an Ad) plus the loading, empty and error feed states, with the search field, chips and sample-data marker visible.
 - Required check name: **`goldens`** — a second job in `.github/workflows/ci.yml`, shown as `CI / goldens (pull_request)`. Required on `main` since 2026-11-13.
 - Goldens only run on Linux (tag `golden`); on Windows `flutter test` skips them. Text uses real Roboto/Material Icons kept in `test/goldens/fonts/`.
 - When the check fails, the run's **Artifacts** has `golden-failures` with before/after/diff pictures.
@@ -119,7 +136,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (86 passing, 4 golden tests skipped off Linux): passing on Windows as of #43.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (124 passing, 6 golden tests skipped off Linux): passing on Windows as of #4.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward

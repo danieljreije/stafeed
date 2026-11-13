@@ -25,6 +25,8 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:stafeed/app/features/feed/data/data_gateway.dart';
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
+import 'package:stafeed/app/features/feed/data/fixtures/fixture_brand_ads.dart';
+import 'package:stafeed/app/features/feed/data/fixtures/fixture_products.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
@@ -38,10 +40,20 @@ final bool _isLinux = Platform.isLinux;
 /// A phone-sized screen, kept small so the images stay light.
 const _screenSize = Size(390, 844);
 
-/// One golden per Feed Item kind the app shows today. Add a row here when a
-/// new kind arrives (Brand Ad, Not an Ad, ...).
-final _feedItemKinds = <String, bool Function(FeedItem)>{
-  'affiliate_ad': (item) => item.isAd,
+/// One golden per Feed Item kind, each taken from the Fixtures. Add a row
+/// here when a new kind arrives.
+final _feedItemKinds = <String, Future<FeedItem> Function()>{
+  'affiliate_ad': () async => (await FixtureDataGateway().getFeedPage()).items
+      .firstWhere((item) => item is AffiliateAd),
+  'brand_ad': () async => fixtureBrandAds.first,
+  // For You never holds one, so it is made from the first Fixture whose
+  // Offer earns Stafeed nothing.
+  'not_an_ad': () async {
+    final product = fixtureProducts.firstWhere(
+      (product) => !product.offers.first.isAffiliate,
+    );
+    return NotAnAd(product: product, offer: product.offers.first);
+  },
 };
 
 void main() {
@@ -55,10 +67,9 @@ void main() {
   });
 
   group('Feed Item kinds', () {
-    for (final MapEntry(key: name, value: isKind) in _feedItemKinds.entries) {
+    for (final MapEntry(key: name, value: pick) in _feedItemKinds.entries) {
       testWidgets(name, skip: !_isLinux, (tester) async {
-        final item = (await FixtureDataGateway().getFeedPage()).items
-            .firstWhere(isKind);
+        final item = await pick();
 
         await _openFeed(
           tester,

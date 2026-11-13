@@ -48,7 +48,7 @@ _Avoid_: Organic result, free listing
 ### Feed
 
 **Feed Item**:
-One full-screen card in the feed: either a Brand Ad, or an Affiliate Ad showing a Product with exactly one chosen Offer.
+One full-screen card in the feed: a Brand Ad, an Affiliate Ad showing a Product with exactly one chosen Offer, or (only inside a Shopping Session) a Not an Ad item showing a Product with one Offer.
 _Avoid_: Card, post, product card (in domain talk)
 
 **For You**:

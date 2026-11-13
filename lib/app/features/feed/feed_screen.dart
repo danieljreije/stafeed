@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'models/feed_filter.dart';
+import 'models/feed_item.dart';
 import 'models/feed_state.dart';
+import 'models/product.dart';
 import 'models/supported_filters.dart';
 import 'providers/data_gateway_provider.dart';
 import 'providers/feed_filter_provider.dart';
 import 'providers/feed_provider.dart';
 import 'providers/saved_products_provider.dart';
+import 'widgets/brand_ad_card.dart';
 import 'widgets/feed_search_field.dart';
 import 'widgets/product_card.dart';
 import 'widgets/sample_data_marker.dart';
@@ -195,17 +198,22 @@ class _FeedPages extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       if (index >= items.length) return const _EndOfFeed();
 
-                      final item = items[index];
-
-                      return ProductCard(
-                        item: item,
-                        isSaved: savedProductIds.contains(item.product.id),
-                        onSaveToggle: () {
-                          ref
-                              .read(savedProductsProvider.notifier)
-                              .toggleProduct(item.product.id);
-                        },
-                      );
+                      return switch (items[index]) {
+                        final ProductFeedItem item => ProductCard(
+                          item: item,
+                          isSaved: savedProductIds.contains(item.product.id),
+                          onSaveToggle: () {
+                            ref
+                                .read(savedProductsProvider.notifier)
+                                .toggleProduct(item.product.id);
+                          },
+                        ),
+                        final BrandAd ad => BrandAdCard(
+                          ad: ad,
+                          onProductTap: (product) =>
+                              _showLinkedProduct(context, product),
+                        ),
+                      };
                     },
                   ),
                 ),
@@ -234,6 +242,16 @@ class _FeedPages extends ConsumerWidget {
             );
           },
         );
+  }
+
+  /// Names the Product whose chip was tapped on a Brand Ad. Product details
+  /// (#7) will open here instead.
+  void _showLinkedProduct(BuildContext context, Product product) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('${product.title} by ${product.brand}')),
+      );
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {

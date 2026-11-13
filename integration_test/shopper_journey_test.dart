@@ -75,8 +75,14 @@ Future<void> tapText(WidgetTester tester, String text) async {
   await tester.tap(find.text(text));
 }
 
+/// The Feed Items this journey meets are all Affiliate Ads: the Fixtures'
+/// Brand Ads come later in the feed. Reading any other kind through this
+/// list fails the test.
+List<AffiliateAd> affiliateAds(List<FeedItem> items) =>
+    items.cast<AffiliateAd>();
+
 /// The card currently filling the feed shows [item]'s title and nothing else.
-Future<void> waitForCard(WidgetTester tester, FeedItem item) => waitFor(
+Future<void> waitForCard(WidgetTester tester, AffiliateAd item) => waitFor(
   tester,
   'the "${item.product.title}" card to be the only card on screen',
   () =>
@@ -129,14 +135,15 @@ void main() {
     // What the Fixtures say the Shopper should see, asked from the same
     // gateway the app uses so the test follows Fixture edits.
     final gateway = FixtureDataGateway();
-    final forYou = (await gateway.getFeedPage()).items;
+    final forYou = affiliateAds((await gateway.getFeedPage()).items);
     const query = 'Kestrel';
-    final searched = (await gateway.getFeedPage(
-      filter: const FeedFilter(query: query),
-    )).items;
-    final watches = (await gateway.getFeedPage(
-      filter: const FeedFilter(category: 'watches'),
-    )).items;
+    final searched = affiliateAds(
+      (await gateway.getFeedPage(filter: const FeedFilter(query: query))).items,
+    );
+    final watches = affiliateAds(
+      (await gateway.getFeedPage(filter: const FeedFilter(category: 'watches')))
+          .items,
+    );
     expect(forYou.length, greaterThanOrEqualTo(3));
     expect(searched, isNotEmpty);
     expect(searched.first.product.id, isNot(forYou.first.product.id));
@@ -156,6 +163,9 @@ void main() {
     await waitForCard(tester, forYou[0]);
     expect(find.text('Sample data · not real products'), findsOneWidget);
     expect(find.text(forYou[0].offer.price.format()), findsOneWidget);
+    // Every Ad says it is one.
+    expect(find.text('AD'), findsOneWidget);
+    expect(find.text('Stafeed may earn a commission'), findsOneWidget);
 
     // Swipe through For You.
     await swipeUp(tester);

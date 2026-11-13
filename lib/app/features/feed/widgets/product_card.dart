@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models/feed_item.dart';
+import 'feed_card_frame.dart';
+import 'feed_item_labels.dart';
 
+/// The card for a Feed Item that shows one Product with its chosen Offer:
+/// an Affiliate Ad (labelled AD) or a Not an Ad Feed Item (labelled so).
 class ProductCard extends StatelessWidget {
-  final FeedItem item;
+  final ProductFeedItem item;
   final bool isSaved;
   final VoidCallback onSaveToggle;
 
@@ -19,96 +23,50 @@ class ProductCard extends StatelessWidget {
     final product = item.product;
     final offer = item.offer;
 
-    return Container(
-      decoration: BoxDecoration(color: Colors.grey.shade200),
-      child: Stack(
-        fit: StackFit.expand,
+    final (label, note) = switch (item) {
+      AffiliateAd() => (const AdLabel(), FeedItemNote.affiliate),
+      NotAnAd() => (const NotAnAdLabel(), FeedItemNote.notAnAd),
+    };
+
+    return FeedCardFrame(
+      media: item.media,
+      details: [
+        label,
+        const SizedBox(height: 8),
+        Text(
+          "${product.brand} • ${offer.merchant}",
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          product.title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          offer.price.format(),
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+        ),
+        const SizedBox(height: 6),
+        FeedItemNote(note),
+      ],
+      sideActions: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (product.imageUrls.isEmpty)
-            const Center(
-              child: Icon(Icons.image_not_supported_outlined, size: 48),
-            )
-          else
-            Image.network(
-              product.imageUrls.first,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) {
-                  return child;
-                }
-
-                return const Center(child: CircularProgressIndicator());
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Icon(Icons.broken_image_outlined, size: 48),
-                );
-              },
-            ),
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black54],
-                ),
-              ),
+          IconButton(
+            onPressed: onSaveToggle,
+            icon: Icon(
+              isSaved ? Icons.favorite : Icons.favorite_border,
+              color: isSaved ? Colors.red : Colors.white,
             ),
           ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${product.brand} • ${offer.merchant}",
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-
-                const SizedBox(height: 4),
-                Text(
-                  product.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  offer.price.format(),
-                  style: const TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ],
-            ),
-          ),
-          // Halfway down the right edge: the feed's search box and chips
-          // float over the top of the card and would cover it there.
-          Positioned(
-            right: 16,
-            top: 0,
-            bottom: 0,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    onSaveToggle();
-                  },
-                  icon: Icon(
-                    isSaved ? Icons.favorite : Icons.favorite_border,
-                    color: isSaved ? Colors.red : Colors.white,
-                  ),
-                ),
-                Text(
-                  isSaved ? 'Saved' : 'Save',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ],
-            ),
+          Text(
+            isSaved ? 'Saved' : 'Save',
+            style: const TextStyle(color: Colors.white),
           ),
         ],
       ),

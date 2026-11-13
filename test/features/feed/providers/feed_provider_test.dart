@@ -24,7 +24,7 @@ void main() {
 
   FeedState feed() => container.read(feedProvider);
   FeedNotifier controller() => container.read(feedProvider.notifier);
-  List<String> ids() => [for (final item in feed().items) item.product.id];
+  List<String> ids() => [for (final item in feed().items) item.id];
 
   /// Lets everything already answered reach the feed.
   Future<void> settle() => pumpEventQueue();
