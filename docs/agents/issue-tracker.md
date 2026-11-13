@@ -11,7 +11,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone. This repo is `danieljreije/stafeed`. Note: its GitHub default branch is `master` (just the initial commit); all work lives on `main`.
+Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone. This repo is `danieljreije/stafeed`. Its default branch is `main`; all work targets `main`.
 
 **REST fallback:** some sandboxed agent environments block GitHub GraphQL, which `gh issue create/list/view/edit` use. There, use the REST API instead, e.g. `gh api repos/danieljreije/stafeed/issues -f title=... -f body=... -f 'labels[]=ready-for-agent'`, `gh api repos/danieljreije/stafeed/issues/<n>`, `gh api repos/danieljreije/stafeed/issues/<n>/comments -f body=...`, `gh api -X PATCH repos/danieljreije/stafeed/issues/<n> -f state=closed`.
 

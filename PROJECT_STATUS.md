@@ -86,6 +86,12 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it test-first in a worktree off `main` (under `.claude/worktrees/`), opens a PR with `PROJECT_STATUS.md` updated, turns on auto-merge and follows CI. It never weakens, skips or deletes a test to get green.
 - Give-up path: after two red attempts, any permission block, or a ticket that can't be done as written, it comments on the ticket (`Stafeed orchestrator gave up: ...`), unassigns itself, swaps `ready-for-agent` for `ready-for-human`, sends you a push notification and stops. The next run skips that ticket and takes the next one.
 - Scheduled task: `stafeed-orchestrator` (Claude desktop app, on this PC), prompt in `docs/agents/orchestrator-scheduled-task.md`. Auto mode, never bypass-permissions; `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh`. It only runs while the PC is on and the Claude app is open.
+- **Live since 2026-11-13**: every two hours (cron `0 */2 * * *`, local time, plus a few minutes' delay), one ticket per run.
+- Proven 2026-11-13:
+  - Live run: took #3 with no human action, built it test-first, opened PR #56, which merged itself on green CI. #3 closed. The run had to push one more commit after the golden images were regenerated (GitHub doesn't count checks on the bot's commit); the run prompt now does this on purpose (PR #57).
+  - Give-up run: on test ticket #58 (impossible on purpose), it commented, unassigned itself, switched the label to `ready-for-human`, sent a notification and stopped without building anything. #58 was then closed.
+- Notifications reach the Windows desktop. They don't reach your phone yet: scheduled sessions aren't connected to Remote Control.
+- The orchestrator uses your `gh` login, so a ticket it claims shows as assigned to you.
 - To keep the loop off a ticket (e.g. you or another session is working on it), assign it to someone: assigned tickets are skipped.
 - Tickets whose PR merged before `main` became the default branch (#32, #34) stayed open; the first live run closed them on 2026-11-13. A live run closes such "done but still open" tickets itself.
 
