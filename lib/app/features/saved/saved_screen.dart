@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_state.dart';
 import 'package:stafeed/app/features/feed/providers/feed_provider.dart';
 
@@ -25,7 +26,12 @@ class SavedScreen extends ConsumerWidget {
         ),
 
         FeedPhase.loaded => () {
-          final products = [for (final item in feedState.items) item.product];
+          // Only Feed Items showing one Product can be saved; a Brand Ad
+          // has no Save button.
+          final products = [
+            for (final item in feedState.items)
+              if (item is ProductFeedItem) item.product,
+          ];
 
           if (products.isEmpty) {
             return const Center(child: Text('No products available.'));

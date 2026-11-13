@@ -6,6 +6,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
 import 'package:stafeed/app/features/feed/feed_screen.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
+import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/widgets/product_card.dart';
 
 Future<void> pumpFeed(WidgetTester tester) async {
@@ -25,7 +26,7 @@ void main() {
     tester,
   ) async {
     final firstPage = await FixtureDataGateway().getFeedPage();
-    final first = firstPage.items.first;
+    final first = firstPage.items.first as AffiliateAd;
 
     await pumpFeed(tester);
 
@@ -70,7 +71,8 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'Watches'));
     await tester.pumpAndSettle();
 
-    expect(find.text(watchesPage.items.first.product.title), findsOneWidget);
+    final firstWatch = watchesPage.items.first as AffiliateAd;
+    expect(find.text(firstWatch.product.title), findsOneWidget);
   });
 
   testWidgets(

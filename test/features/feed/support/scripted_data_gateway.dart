@@ -4,6 +4,7 @@ import 'package:stafeed/app/features/feed/data/data_gateway.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
+import 'package:stafeed/app/features/feed/models/media.dart';
 import 'package:stafeed/app/features/feed/models/money.dart';
 import 'package:stafeed/app/features/feed/models/offer.dart';
 import 'package:stafeed/app/features/feed/models/product.dart';
@@ -64,31 +65,62 @@ class FeedPageRequest {
   }
 }
 
-/// A sample Feed Item whose title is "Product [id]".
-FeedItem feedItem(String id) {
-  final offer = Offer(
-    id: 'offer-$id',
-    merchant: 'Sample Merchant',
-    price: const Money(1000, 'USD'),
-    shipsTo: const {'US'},
-    url: Uri.parse('https://example.com/$id'),
-    isAffiliate: true,
+/// A sample Product whose title is "Product [id]", with one Offer. The Offer
+/// earns Stafeed money unless [isAffiliate] is false.
+Product sampleProduct(
+  String id, {
+  bool isAffiliate = true,
+  List<String> imageUrls = const [],
+}) {
+  return Product(
+    id: id,
+    title: 'Product $id',
+    description: 'Sample product $id',
+    brand: 'Sample Brand',
+    category: 'samples',
+    imageUrls: imageUrls,
+    offers: [
+      Offer(
+        id: 'offer-$id',
+        merchant: 'Sample Merchant',
+        price: const Money(1000, 'USD'),
+        shipsTo: const {'US'},
+        url: Uri.parse('https://example.com/$id'),
+        isAffiliate: isAffiliate,
+      ),
+    ],
   );
+}
 
-  return FeedItem(
-    product: Product(
-      id: id,
-      title: 'Product $id',
-      description: 'Sample product $id',
-      brand: 'Sample Brand',
-      category: 'samples',
-      imageUrls: const [],
-      offers: [offer],
-    ),
-    offer: offer,
-  );
+/// A sample Affiliate Ad whose title is "Product [id]".
+AffiliateAd feedItem(String id, {List<String> imageUrls = const []}) {
+  final product = sampleProduct(id, imageUrls: imageUrls);
+
+  return AffiliateAd(product: product, offer: product.offers.single);
 }
 
 List<FeedItem> feedItems(Iterable<String> ids) => [
   for (final id in ids) feedItem(id),
 ];
+
+/// A sample Not an Ad Feed Item whose title is "Product [id]".
+NotAnAd notAnAd(String id, {List<String> imageUrls = const []}) {
+  final product = sampleProduct(id, isAffiliate: false, imageUrls: imageUrls);
+
+  return NotAnAd(product: product, offer: product.offers.single);
+}
+
+/// A sample Brand Ad by "Brand [id]", linked to [products].
+BrandAd brandAd(
+  String id, {
+  List<Product> products = const [],
+  List<Media> media = const [],
+}) {
+  return BrandAd(
+    id: id,
+    brand: 'Brand $id',
+    headline: 'Headline $id',
+    media: media,
+    products: products,
+  );
+}

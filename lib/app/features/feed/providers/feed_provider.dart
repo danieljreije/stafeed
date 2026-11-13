@@ -148,17 +148,17 @@ class FeedNotifier extends Notifier<FeedState> {
     }
   }
 
-  /// [existing] followed by the Products in [incoming] not already shown.
+  /// [existing] followed by the Feed Items in [incoming] not already shown.
   static List<FeedItem> _append(
     List<FeedItem> existing,
     List<FeedItem> incoming,
   ) {
-    final seen = {for (final item in existing) item.product.id};
+    final seen = {for (final item in existing) item.id};
 
     return [
       ...existing,
       for (final item in incoming)
-        if (seen.add(item.product.id)) item,
+        if (seen.add(item.id)) item,
     ];
   }
 }
