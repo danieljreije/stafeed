@@ -9,9 +9,6 @@ on:
   schedule:
     # 03:00 UTC every night. Scheduled runs always use `main`.
     - cron: "0 3 * * *"
-  # TEMP (remove before merge): run on pushes to this branch for proof.
-  push:
-    branches: [claude/ticket-39-nightly-android-4e6e19]
   workflow_dispatch:
     inputs:
       force_failure:
@@ -77,8 +74,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: flutter test integration_test/shopper_journey_test.dart -d emulator-5554 --reporter expanded --file-reporter json:results.json --dart-define=STAFEED_FORCE_E2E_FAILURE=${{ env.FORCE_FAILURE }}
 
+      # Only failures on `main` (nightly or manual) open a real bug issue;
+      # a manual run on another branch just fails. A forced failure opens its
+      # own issue on any branch.
       - name: Open or update the bug issue
-        if: ${{ failure() }}
+        if: ${{ failure() && (github.ref == 'refs/heads/main' || env.FORCE_FAILURE == 'true') }}
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -102,18 +102,23 @@ jobs:
 
           if [ "$FORCE_FAILURE" = "true" ]; then
             title="Nightly Android check failed (deliberate test failure)"
+            marker="<!-- nightly-android-check:forced -->"
             note=$'This run was started by hand with **force_failure**, to prove that failures open an issue. Nothing is broken; close this issue.\n\n'
             # Assigned to the owner so the orchestrator leaves it alone.
             assignee_args=(-f "assignees[]=${{ github.repository_owner }}")
           else
             title="Nightly Android check failed"
+            marker="<!-- nightly-android-check:main -->"
             note=""
             assignee_args=()
           fi
 
-          # One open issue per title: if it already exists, add a comment.
-          existing=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \
-            --jq ".[] | select(.pull_request == null and .title == \"$title\") | .number" | head -n1)
+          # One open issue at a time, found by the hidden marker in its body
+          # (or by its title): if it is already open, add a comment instead.
+          matches=$(MARKER="$marker" TITLE="$title" gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=100" \
+            --jq '.[] | select(.pull_request == null and (((.body // "") | contains(env.MARKER)) or .title == env.TITLE)) | .number')
+          existing=$(printf '%s\n' "$matches" | sed -n 1p)
 
           tests=$(printf '%s\n' "$failed" | sed 's/^/- `/; s/$/`/')
           if [ -n "$existing" ]; then
@@ -122,8 +127,8 @@ jobs:
             gh api "repos/$GITHUB_REPOSITORY/issues/$existing/comments" -f body="$body" > /dev/null
             echo "Commented on existing issue #$existing"
           else
-            body=$(printf '%s<!-- nightly-android-check -->\nThe nightly Android check (ticket #39) failed on `%s` (commit %s).\n\nFailing test:\n%s\n\nRun log: %s\n\nThe test is `integration_test/shopper_journey_test.dart`, the same one the `web end-to-end` PR check runs. Fix the app (or the test, if the test is wrong) so it passes on Android. Never weaken or delete the test to get green.' \
-              "$note" "$GITHUB_REF_NAME" "$GITHUB_SHA" "$tests" "$RUN_URL")
+            body=$(printf '%s%s\nThe nightly Android check (ticket #39) failed on `%s` (commit %s).\n\nFailing test:\n%s\n\nRun log: %s\n\nThe test is `integration_test/shopper_journey_test.dart`, the same one the `web end-to-end` PR check runs. Fix the app (or the test, if the test is wrong) so it passes on Android. Never weaken or delete the test to get green.' \
+              "$note" "$marker" "$GITHUB_REF_NAME" "$GITHUB_SHA" "$tests" "$RUN_URL")
             number=$(gh api "repos/$GITHUB_REPOSITORY/issues" -f title="$title" -f body="$body" \
               -f "labels[]=ready-for-agent" "${assignee_args[@]}" --jq .number)
             echo "Opened issue #$number"
