@@ -11,6 +11,7 @@ class FeedCardFrame extends StatelessWidget {
     required this.media,
     required this.details,
     this.sideActions,
+    this.onTap,
   });
 
   final List<Media> media;
@@ -21,9 +22,13 @@ class FeedCardFrame extends StatelessWidget {
   /// Buttons halfway down the right edge, if the card has any.
   final Widget? sideActions;
 
+  /// Called when the Shopper taps the card itself rather than one of its
+  /// buttons or chips (they keep their own taps).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(color: Colors.grey.shade200),
       child: Stack(
         fit: StackFit.expand,
@@ -66,6 +71,13 @@ class FeedCardFrame extends StatelessWidget {
             ),
         ],
       ),
+    );
+
+    if (onTap == null) return card;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: card,
     );
   }
 }

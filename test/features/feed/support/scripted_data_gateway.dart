@@ -8,12 +8,17 @@ import 'package:stafeed/app/features/feed/models/media.dart';
 import 'package:stafeed/app/features/feed/models/money.dart';
 import 'package:stafeed/app/features/feed/models/offer.dart';
 import 'package:stafeed/app/features/feed/models/product.dart';
+import 'package:stafeed/app/features/feed/models/product_actions.dart';
 import 'package:stafeed/app/features/feed/models/supported_filters.dart';
 
 /// A data gateway whose feed pages arrive only when the test says so, in
 /// whatever order the test chooses. Every request is recorded in [requests].
 class ScriptedDataGateway implements DataGateway {
-  ScriptedDataGateway({this.categories = const []});
+  ScriptedDataGateway({
+    this.categories = const [],
+    this.servesSampleData = true,
+    Map<String, Product>? products,
+  }) : products = products ?? {};
 
   final List<ProductCategory> categories;
 
@@ -21,7 +26,27 @@ class ScriptedDataGateway implements DataGateway {
   final List<FeedPageRequest> requests = [];
 
   @override
-  bool get servesSampleData => true;
+  final bool servesSampleData;
+
+  /// What [getProduct] answers, by Product ID. Change it to change the
+  /// answer the next details screen gets.
+  final Map<String, Product> products;
+
+  /// When set, [getProduct] answers with this instead of [products].
+  Future<Product?> Function(String productId)? onGetProduct;
+
+  /// Every Product ID asked for through [getProduct], oldest first.
+  final List<String> productRequests = [];
+
+  /// Every Outbound Click recorded, oldest first.
+  final List<OutboundClick> outboundClicks = [];
+
+  /// Every Report stored, oldest first.
+  final List<ProductReport> reports = [];
+
+  /// When set, recording an Outbound Click or storing a Report fails with
+  /// this (after it is listed above, as a request that never arrived).
+  Object? actionError;
 
   @override
   Future<FeedPage> getFeedPage({
@@ -36,6 +61,26 @@ class ScriptedDataGateway implements DataGateway {
   @override
   Future<SupportedFilters> getSupportedFilters() async =>
       SupportedFilters(categories: categories);
+
+  @override
+  Future<Product?> getProduct(String productId) async {
+    productRequests.add(productId);
+    final answer = onGetProduct;
+    if (answer != null) return answer(productId);
+    return products[productId];
+  }
+
+  @override
+  Future<void> recordOutboundClick(OutboundClick click) async {
+    outboundClicks.add(click);
+    if (actionError case final error?) throw error;
+  }
+
+  @override
+  Future<void> submitReport(ProductReport report) async {
+    reports.add(report);
+    if (actionError case final error?) throw error;
+  }
 }
 
 /// One feed page the app asked for and is still waiting on until the test

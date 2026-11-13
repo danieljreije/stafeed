@@ -23,8 +23,12 @@ abstract final class AppRoutes {
   static const saved = '/saved';
   static const profile = '/profile';
 
-  static String productDetails(String productId) =>
-      '/product/${Uri.encodeComponent(productId)}';
+  /// A Product's details. [offerId] is the Offer the Shopper saw, shown
+  /// again if the Product still has it.
+  static String productDetails(String productId, {String? offerId}) => Uri(
+    path: '/product/${Uri.encodeComponent(productId)}',
+    queryParameters: offerId == null ? null : {'offer': offerId},
+  ).toString();
 }
 
 /// The app's routes: onboarding on first launch, then the four tabs, each
@@ -112,8 +116,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Opens over the tabs, so Back returns to the tab it came from.
       GoRoute(
         path: '/product/:productId',
-        builder: (context, state) =>
-            ProductDetailsScreen(productId: state.pathParameters['productId']!),
+        builder: (context, state) => ProductDetailsScreen(
+          productId: state.pathParameters['productId']!,
+          offerId: state.uri.queryParameters['offer'],
+        ),
       ),
     ],
   );

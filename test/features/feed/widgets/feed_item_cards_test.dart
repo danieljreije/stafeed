@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:stafeed/app/features/feed/data/fixtures/fixture_brand_ads.dart';
@@ -361,21 +362,44 @@ void main() {
       expect(find.text(adLabel), findsNothing);
     });
 
-    testWidgets("tapping a Brand Ad's chip names that Product", (tester) async {
-      await pumpFeedWith(tester, [
+    // Changed by #7: the chip used to name the Product in a short message;
+    // it now opens that Product's details.
+    testWidgets("tapping a Brand Ad's chip opens that Product's details", (
+      tester,
+    ) async {
+      final gateway = ScriptedDataGateway();
+      final opened = <String>[];
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (context, state) => const FeedScreen()),
+          GoRoute(
+            path: '/product/:productId',
+            builder: (context, state) {
+              opened.add(state.pathParameters['productId']!);
+              return const Scaffold(body: Text('Details'));
+            },
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [dataGatewayProvider.overrideWithValue(gateway)],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pump();
+      gateway.requests.single.succeed([
         brandAd('b', products: [sampleProduct('p1'), sampleProduct('p2')]),
       ]);
+      await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(ActionChip, 'Product p2'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(
-        find.descendant(
-          of: find.byType(SnackBar),
-          matching: find.textContaining('Product p2'),
-        ),
-        findsOneWidget,
-      );
+      expect(opened, ['p2']);
+      expect(find.text('Details'), findsOneWidget);
     });
 
     testWidgets('a Brand Ad has no Save button', (tester) async {

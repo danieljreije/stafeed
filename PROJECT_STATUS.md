@@ -1,6 +1,6 @@
 # Stafeed — Project Status
 
-_Last updated: 2026-11-13_ · "Stafeed" is a working name.
+_Last updated: 2026-11-14_ · "Stafeed" is a working name.
 
 - Spec: [#1](https://github.com/danieljreije/stafeed/issues/1) — tickets are its sub-issues (#2–#30), with native "blocked by" links
 - Glossary: `CONTEXT.md` · Decisions: `docs/adr/` · Background vision: `docs/STAFEED_PRODUCT_SPEC.md`
@@ -11,11 +11,11 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - #3 — 02 Reliable feed: paging, stale results, retry, refresh, states (2026-11-13, built by the orchestrator)
 - #4 — 03 Feed Item kinds & labels: AD label, Brand Ads, Not an Ad (2026-11-13, built by the orchestrator)
 - #6 — 05 App shell, onboarding & Destination Country (2026-11-13, built by the orchestrator)
+- #7 — 06 Product details, Merchant Handoff, Share, Report (2026-11-14, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
-| #7 — 06 Product details, Merchant Handoff, Share, Report | Local agent (Flutter) |
 | #8 — 07 Saved Products independent of the feed | Local agent (Flutter) |
 | #9 — 08 Events log, debug screen & ad counter | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
@@ -82,6 +82,20 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
   - **Search tab is simple**: a search box and the category list; either one filters the Feed and takes you there. The search box and chips on the Feed are still there too. Shopping Sessions (#11) will take over this tab.
   - The launcher label and browser tab title still say "stafeed" in `android/`, `ios/` and `web/`; those files can't read the Dart name. They change with the final name (#30).
 - Choices made by the orchestrator: the wording of the onboarding questions and buttons; the currency list; the tab icons (Saved is a bookmark, because the heart is the Save button); trimming a Brand Ad's linked Products by country instead of hiding the whole ad.
+
+## Product details, Merchant Handoff, Share, Report (#7)
+- **Opening details**: tap an Affiliate Ad's card (anywhere but the Save button) or a Brand Ad's Product chip. The route is `/product/<id>?offer=<offer id>`, so the details show the Offer the Shopper saw in the feed. Back returns to the same Feed Item: the details open over the tabs, which keep their place.
+- **Details screen** (`lib/app/features/product/product_details_screen.dart`): pictures (swiped sideways), Brand, title, price, In stock / Out of stock, "Sold by <Merchant>", the commission note (or "earns nothing" for an Offer that doesn't earn), **View at <Merchant>**, description and attributes. Sample-data marker on Fixtures. Share and Report are in the top bar.
+- **Fresh fetch**: each open asks the data gateway again (`DataGateway.getProduct`), so price and availability are today's. The gateway only returns Offers that ship to the Destination Country. Loading spinner; a failed fetch shows **Retry**; a Product that's gone (or no longer ships there) says "This Product isn't available any more."
+- **Merchant Handoff**: records an **Outbound Click** through the gateway (`recordOutboundClick`), then opens the Offer's link outside the app (`url_launcher`, new package). On Fixtures it opens an in-app page instead, saying the real app would open that Merchant and that Stafeed never takes payment. The Shopper never waits for the click to be recorded, and a failed record doesn't stop the handoff. If the link won't open, a short message says so.
+- **Share**: the phone's share sheet (`share_plus`, new package). A real Offer shares name, Brand, price, Merchant and link; a Fixture shares only "<name> by <Brand>, found on Stafeed".
+- **Report**: Wrong price, Misleading, Prohibited item, Broken link, Other, plus an optional note. Stored through the gateway (`submitReport`); "Send report" stays off until a reason is picked. A failed send says so.
+- **On Fixtures, Outbound Clicks and Reports are kept in memory only** (`FixtureDataGateway.outboundClicks` / `.reports`), and are lost when the app closes or the Destination Country changes. They reach a real store with the backend (#19, #20). The Events log (#9) can read them from the gateway.
+- The share sheet and link opener sit behind providers (`lib/app/features/product/platform/product_platform.dart`), so tests use fakes.
+- Tests: `test/features/product/product_details_screen_test.dart` (details, fresh fetch, loading/error/gone, each action and its failure), `test/features/product/product_details_flow_test.dart` (whole app on Fixtures: open from an Affiliate Ad and a Brand Ad chip, Save still saves, Back lands on the same Feed Item), `test/features/feed/data/fixture_product_actions_test.dart` (gateway).
+- Changed on purpose, because #7 asks for it: the Brand Ad chip test in `test/features/feed/widgets/feed_item_cards_test.dart` used to expect a short message naming the Product; it now expects that Product's details to open. The test fake gateways (`scripted_data_gateway.dart`, the golden test's fake) gained the three new gateway methods. No golden images change: the cards look the same.
+- Not done here: Saved Products don't open details yet (#8 gives Saved its own snapshots). The plugin registrant files under `linux/`, `macos/` and `windows/` changed locally with the new packages and are not committed, as agreed; Flutter regenerates them on build.
+- Choices made by the orchestrator: the wording on the details, Fixture Merchant and Report screens; Report as a full-screen page with an optional note for every reason; tapping the whole card (not a new button) opens details, so the cards and their golden images stay as they were.
 
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
@@ -169,7 +183,7 @@ _Last updated: 2026-11-13_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (163 passing, 6 golden tests skipped off Linux): passing on Windows as of #6.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (198 passing, 6 golden tests skipped off Linux): passing on Windows as of #7.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward

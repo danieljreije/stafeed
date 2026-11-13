@@ -6,6 +6,7 @@ import '../models/feed_item.dart';
 import '../models/feed_page.dart';
 import '../models/offer.dart';
 import '../models/product.dart';
+import '../models/product_actions.dart';
 import '../models/supported_filters.dart';
 import 'data_gateway.dart';
 import 'fixtures/fixture_brand_ads.dart';
@@ -80,6 +81,47 @@ class FixtureDataGateway implements DataGateway {
       items: items,
       nextCursor: end < matches.length ? _writeCursor(end, fingerprint) : null,
     );
+  }
+
+  /// Every Outbound Click recorded on this gateway, oldest first. Kept in
+  /// memory only: Fixtures have no backend to send them to.
+  List<OutboundClick> get outboundClicks => List.unmodifiable(_outboundClicks);
+  final List<OutboundClick> _outboundClicks = [];
+
+  /// Every Report stored on this gateway, oldest first. Kept in memory only.
+  List<ProductReport> get reports => List.unmodifiable(_reports);
+  final List<ProductReport> _reports = [];
+
+  @override
+  Future<Product?> getProduct(String productId) async {
+    for (final product in _products) {
+      if (product.id != productId) continue;
+
+      final offers = product.offers.where(_shipsHere).toList();
+      if (offers.isEmpty) return null;
+
+      return Product(
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        brand: product.brand,
+        category: product.category,
+        imageUrls: product.imageUrls,
+        attributes: product.attributes,
+        offers: offers,
+      );
+    }
+    return null;
+  }
+
+  @override
+  Future<void> recordOutboundClick(OutboundClick click) async {
+    _outboundClicks.add(click);
+  }
+
+  @override
+  Future<void> submitReport(ProductReport report) async {
+    _reports.add(report);
   }
 
   /// Every Feed Item in For You, in order: each Product that has an

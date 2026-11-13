@@ -31,6 +31,8 @@ import 'package:stafeed/app/features/feed/data/fixtures/fixture_products.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
 import 'package:stafeed/app/features/feed/models/feed_page.dart';
+import 'package:stafeed/app/features/feed/models/product.dart';
+import 'package:stafeed/app/features/feed/models/product_actions.dart';
 import 'package:stafeed/app/features/feed/models/supported_filters.dart';
 import 'package:stafeed/app/features/feed/providers/data_gateway_provider.dart';
 import 'package:stafeed/app/stafeed_app.dart';
@@ -180,6 +182,18 @@ class _FakeGateway implements DataGateway {
   @override
   Future<SupportedFilters> getSupportedFilters() =>
       _fixtures.getSupportedFilters();
+
+  @override
+  Future<Product?> getProduct(String productId) =>
+      _fixtures.getProduct(productId);
+
+  @override
+  Future<void> recordOutboundClick(OutboundClick click) =>
+      _fixtures.recordOutboundClick(click);
+
+  @override
+  Future<void> submitReport(ProductReport report) =>
+      _fixtures.submitReport(report);
 }
 
 /// Tests draw text with a blocky placeholder font by default. Load real
