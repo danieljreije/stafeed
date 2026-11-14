@@ -14,12 +14,16 @@ class ProductCard extends StatelessWidget {
   /// Opens the Product's details. Called when the card itself is tapped.
   final VoidCallback? onOpen;
 
+  /// Marks the Product Not interested. No button without it.
+  final VoidCallback? onNotInterested;
+
   const ProductCard({
     super.key,
     required this.item,
     required this.isSaved,
     required this.onSaveToggle,
     this.onOpen,
+    this.onNotInterested,
   });
 
   @override
@@ -73,6 +77,15 @@ class ProductCard extends StatelessWidget {
             isSaved ? 'Saved' : 'Save',
             style: const TextStyle(color: Colors.white),
           ),
+          if (onNotInterested != null) ...[
+            const SizedBox(height: 16),
+            IconButton(
+              tooltip: 'Not interested',
+              onPressed: onNotInterested,
+              icon: const Icon(Icons.block, color: Colors.white),
+            ),
+            const Text('Nope', style: TextStyle(color: Colors.white)),
+          ],
         ],
       ),
     );

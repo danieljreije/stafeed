@@ -68,8 +68,8 @@ class FeedState {
 
   bool get hasMore => nextCursor != null;
 
-  /// Loaded, and nothing matched.
-  bool get isEmpty => isLoaded && items.isEmpty;
+  /// Loaded, and nothing matched (nor will a next page).
+  bool get isEmpty => isLoaded && items.isEmpty && !hasMore;
 
   /// The Shopper can see every Feed Item there is; nothing more will load.
   bool get reachedEnd => isLoaded && items.isNotEmpty && !hasMore;

@@ -81,6 +81,14 @@ class ScriptedDataGateway implements DataGateway {
     reports.add(report);
     if (actionError case final error?) throw error;
   }
+
+  /// Every Product ID marked Not interested, oldest first.
+  final List<String> notInterested = [];
+
+  @override
+  Future<void> markNotInterested(String productId) async {
+    notInterested.add(productId);
+  }
 }
 
 /// One feed page the app asked for and is still waiting on until the test
