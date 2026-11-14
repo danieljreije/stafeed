@@ -11,7 +11,8 @@ import 'models/supported_filters.dart';
 import 'providers/data_gateway_provider.dart';
 import 'providers/feed_filter_provider.dart';
 import 'providers/feed_provider.dart';
-import 'providers/saved_products_provider.dart';
+import '../saved/providers/saved_products_provider.dart';
+import '../saved/save_action.dart';
 import 'widgets/brand_ad_card.dart';
 import 'widgets/feed_search_field.dart';
 import 'widgets/product_card.dart';
@@ -166,91 +167,78 @@ class _FeedPages extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = feedState.items;
 
-    return ref
-        .watch(savedProductsProvider)
-        .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stackTrace) =>
-              Center(child: Text('Could not load saved products: $error')),
-          data: (savedProductIds) {
-            return Stack(
-              children: [
-                RefreshIndicator(
-                  edgeOffset:
-                      MediaQuery.paddingOf(context).top + _controlsHeight,
-                  onRefresh: () => _refresh(context, ref),
-                  child: PageView.builder(
-                    key: ValueKey(
-                      '${filter.category ?? 'all'}:${filter.query}',
-                    ),
-                    scrollDirection: Axis.vertical,
-                    // A feed of one Feed Item can still be pulled to refresh.
-                    physics: AlwaysScrollableScrollPhysics(
-                      parent: ScrollConfiguration.of(context)
-                          .getScrollPhysics(context),
-                    ),
-                    onPageChanged: (index) {
-                      // Fetch ahead, a few Feed Items before the last one.
-                      if (index >= items.length - 3) {
-                        ref.read(feedProvider.notifier).loadMore();
-                      }
-                    },
-                    // One quiet page after the last Feed Item.
-                    itemCount: items.length + (feedState.reachedEnd ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= items.length) return const _EndOfFeed();
+    // The feed never waits for the Saved Products: until they are read, every
+    // Save button shows as not saved.
+    final savedProductIds = ref.watch(savedProductIdsProvider);
 
-                      return switch (items[index]) {
-                        final ProductFeedItem item => ProductCard(
-                          item: item,
-                          isSaved: savedProductIds.contains(item.product.id),
-                          onSaveToggle: () {
-                            ref
-                                .read(savedProductsProvider.notifier)
-                                .toggleProduct(item.product.id);
-                          },
-                          onOpen: () => context.push(
-                            AppRoutes.productDetails(
-                              item.product.id,
-                              offerId: item.offer.id,
-                            ),
-                          ),
-                        ),
-                        final BrandAd ad => BrandAdCard(
-                          ad: ad,
-                          onProductTap: (product) => context.push(
-                            AppRoutes.productDetails(product.id),
-                          ),
-                        ),
-                      };
-                    },
+    return Stack(
+      children: [
+        RefreshIndicator(
+          edgeOffset: MediaQuery.paddingOf(context).top + _controlsHeight,
+          onRefresh: () => _refresh(context, ref),
+          child: PageView.builder(
+            key: ValueKey('${filter.category ?? 'all'}:${filter.query}'),
+            scrollDirection: Axis.vertical,
+            // A feed of one Feed Item can still be pulled to refresh.
+            physics: AlwaysScrollableScrollPhysics(
+              parent: ScrollConfiguration.of(context).getScrollPhysics(context),
+            ),
+            onPageChanged: (index) {
+              // Fetch ahead, a few Feed Items before the last one.
+              if (index >= items.length - 3) {
+                ref.read(feedProvider.notifier).loadMore();
+              }
+            },
+            // One quiet page after the last Feed Item.
+            itemCount: items.length + (feedState.reachedEnd ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= items.length) return const _EndOfFeed();
+
+              return switch (items[index]) {
+                final ProductFeedItem item => ProductCard(
+                  item: item,
+                  isSaved: savedProductIds.contains(item.product.id),
+                  onSaveToggle: () =>
+                      toggleSaved(context, ref, item.product, item.offer),
+                  onOpen: () => context.push(
+                    AppRoutes.productDetails(
+                      item.product.id,
+                      offerId: item.offer.id,
+                    ),
                   ),
                 ),
+                final BrandAd ad => BrandAdCard(
+                  ad: ad,
+                  onProductTap: (product) =>
+                      context.push(AppRoutes.productDetails(product.id)),
+                ),
+              };
+            },
+          ),
+        ),
 
-                if (feedState.isLoadingMore)
-                  const Positioned(
-                    bottom: 40,
-                    right: 20,
-                    child: CircularProgressIndicator(),
-                  ),
+        if (feedState.isLoadingMore)
+          const Positioned(
+            bottom: 40,
+            right: 20,
+            child: CircularProgressIndicator(),
+          ),
 
-                // The Feed Items already loaded stay; only the next page is
-                // tried again.
-                if (feedState.loadMoreError != null)
-                  Positioned(
-                    bottom: 40,
-                    left: 20,
-                    child: FilledButton(
-                      onPressed: () {
-                        ref.read(feedProvider.notifier).loadMore();
-                      },
-                      child: const Text('Retry loading'),
-                    ),
-                  ),
-              ],
-            );
-          },
-        );
+        // The Feed Items already loaded stay; only the next page is
+        // tried again.
+        if (feedState.loadMoreError != null)
+          Positioned(
+            bottom: 40,
+            left: 20,
+            child: FilledButton(
+              onPressed: () {
+                ref.read(feedProvider.notifier).loadMore();
+              },
+              child: const Text('Retry loading'),
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _refresh(BuildContext context, WidgetRef ref) async {

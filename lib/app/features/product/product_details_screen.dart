@@ -11,6 +11,8 @@ import '../feed/providers/data_gateway_provider.dart';
 import '../feed/widgets/feed_item_labels.dart';
 import '../feed/widgets/media_carousel.dart';
 import '../feed/widgets/sample_data_marker.dart';
+import '../saved/providers/saved_products_provider.dart';
+import '../saved/save_action.dart';
 import 'fixture_merchant_screen.dart';
 import 'platform/product_platform.dart';
 import 'product_details.dart';
@@ -46,6 +48,13 @@ class ProductDetailsScreen extends ConsumerWidget {
         title: Text(product?.brand ?? 'Product'),
         actions: [
           if (product != null) ...[
+            if (offer != null)
+              _SaveButton(
+                isSaved: ref
+                    .watch(savedProductIdsProvider)
+                    .contains(product.id),
+                onPressed: () => toggleSaved(context, ref, product, offer),
+              ),
             IconButton(
               tooltip: 'Share',
               icon: const Icon(Icons.share_outlined),
@@ -292,6 +301,26 @@ class _Details extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Saves the Product as shown here, or removes it from Saved.
+class _SaveButton extends StatelessWidget {
+  const _SaveButton({required this.isSaved, required this.onPressed});
+
+  final bool isSaved;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: isSaved ? 'Remove from Saved' : 'Save',
+      onPressed: onPressed,
+      icon: Icon(
+        isSaved ? Icons.favorite : Icons.favorite_border,
+        color: isSaved ? Colors.red : null,
       ),
     );
   }
