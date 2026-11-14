@@ -15,12 +15,12 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
 - #9 — 08 Events log, debug screen & ad counter (2026-11-14, built by the orchestrator)
 - #15 — 14 Backend first slice: schema, ad sources, config & feed (2026-11-14, built by the orchestrator)
+- #26 — 25 Research: pay-per-click shopping networks (2026-11-14, by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
-| #26 — 25 Research: pay-per-click networks | Cloud agent |
 | #14 — 13 Create Supabase project | You |
 | #24 — 23 Apply to Awin; launch country | You |
 | #27 — 26 Apply for Shopify Catalog access | You |
@@ -144,6 +144,24 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   - `npm audit` reports 7 moderate advisories, all in ESLint's dev-only dependencies. Nothing ships to the app or the functions.
   - The function code uses `.ts` import paths and a JSON import, so the same files run on Deno (Supabase) and under Node (tests). It hasn't been run on Deno or deployed yet (no project, and Deno isn't installed on this PC).
 - Choices made by the orchestrator: Node 20 + Vitest + PGlite instead of Deno or local Supabase for the checks; offset-in-cursor paging like the app's Fixture gateway; the error codes; the shape of `/v1/config`; a JSON copy of the Fixtures guarded by a Flutter test, instead of one shared file (the app's Fixtures stay Dart, so no golden or app test changes).
+
+## Pay-per-click shopping networks research (#26)
+- File: `docs/research/ppc-shopping-networks.md`. Every claim links to its source (all read 2026-11-14). Secondary sources and search-engine summaries are marked as such.
+- **Recommendation:**
+  1. **Kelkoo Group first, for the US and UK.** A live pay-per-click network with a server-side offer search API: free text, category and price filters, and Offers with price, currency, availability, image, Merchant and a click link (`goUrl`).
+  2. **Connexity (a Taboola company) second, US only.** Its terms accept apps.
+  3. **Sovrn Commerce optional.** It has no keyword search, so it suits wrapping outbound links better than serving as an Ad source.
+- **UAE and Lebanon: no pay-per-click shopping network covers them.** Middle East networks (ArabClicks, Admitad, Boostiny) pay per sale or per coupon, with no product search API found. Nothing targets Lebanon. Ads there have to come from Brand Ads and affiliate programmes.
+- What it means for an adapter later:
+  - Kelkoo's `goUrl`s must not be cached, and the Merchant Handoff must open them in a visible browser on the Shopper's device, never as a call in the background. So a fresh fetch at tap time is needed.
+  - Neither Kelkoo nor Connexity gives ships-to countries. Each Offer belongs to one market country.
+  - Connexity needs a credit to Connexity wherever its Offers show, and a refresh every 6 hours.
+- **For you to do (only if you want pay-per-click Ads):**
+  - Sign up as a Kelkoo publisher. Before building anything, ask your account manager the open questions in the file: do they accept a native app; is an in-app browser tab allowed for the click; what goes in `originReferer`; does a feed made only of Ads count as a forbidden traffic type.
+  - Kelkoo pays against a monthly invoice from you, so you need an entity that can send one.
+  - Connexity's public terms are from 2013: ask them for the current ones.
+- Not confirmed: whether Kelkoo accepts apps, and Connexity's API details (its help centre blocked automated reading). No code changed. The checks ran unchanged: format, analyze, 269 tests passing.
+- Choice made by the orchestrator: the file sits in a new `docs/research/` folder, because the repo had no place for research notes yet.
 
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
