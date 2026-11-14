@@ -12,11 +12,11 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #4 — 03 Feed Item kinds & labels: AD label, Brand Ads, Not an Ad (2026-11-13, built by the orchestrator)
 - #6 — 05 App shell, onboarding & Destination Country (2026-11-13, built by the orchestrator)
 - #7 — 06 Product details, Merchant Handoff, Share, Report (2026-11-14, built by the orchestrator)
+- #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
-| #8 — 07 Saved Products independent of the feed | Local agent (Flutter) |
 | #9 — 08 Events log, debug screen & ad counter | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
 | #15 — 14 Backend first slice | Cloud agent |
@@ -97,6 +97,17 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Not done here: Saved Products don't open details yet (#8 gives Saved its own snapshots). The plugin registrant files under `linux/`, `macos/` and `windows/` changed locally with the new packages and are not committed, as agreed; Flutter regenerates them on build.
 - Choices made by the orchestrator: the wording on the details, Fixture Merchant and Report screens; Report as a full-screen page with an optional note for every reason; tapping the whole card (not a new button) opens details, so the cards and their golden images stay as they were.
 
+## Saved Products (#8)
+- **Snapshots**: saving keeps the Product with what the Shopper saw: title, Brand, first picture, price and currency, Merchant, the Offer's ID and when it was saved (`lib/app/features/saved/models/saved_product.dart`). Stored on the device as JSON under `saved_products` (`lib/app/features/saved/data/saved_products_storage.dart`). An entry that can't be read is skipped; the others are kept.
+- **Saved tab** (`lib/app/features/saved/saved_screen.dart`) shows every Saved Product from those snapshots, newest first: picture, title, saved price · Merchant. It never needs the feed, so it works offline, after a restart and when the feed holds something else. Tapping a row opens the Product's details on the Offer that was saved; the red heart removes it. Nothing saved: "Nothing saved yet. …". Storage that can't be read: **Retry**.
+- **Unavailable marked**: each row asks the data gateway about its Product (`getProduct`). Gone, or no longer shipping to the Destination Country: **Not available any more**. Still there but no Offer in stock: **Out of stock**. When the check fails (offline) the row just shows, unmarked.
+- **Save from details**: a heart in the details screen's top bar (tooltip "Save" / "Remove from Saved"). The feed card, details and Saved all read the same state (`lib/app/features/saved/providers/saved_products_provider.dart`), so a change in one shows in the others.
+- **Safe while loading, honest on failure**: a save before the Saved Products are read waits for them instead of throwing or overwriting them. A change shows at once and is stored in order; if the device won't store it, it is undone and a message says "Couldn't update your Saved Products. Try again." The feed no longer waits for the Saved Products to load: until then its hearts show as not saved.
+- Tests (in-memory shared-preferences mode): `test/features/saved/saved_products_storage_test.dart`, `saved_products_provider_test.dart` (loading, restart, quick saves, write and read failures, availability), `saved_screen_test.dart` (snapshots without the feed, marks, offline, removal, errors) and `saved_products_flow_test.dart` (whole app on Fixtures: save from details and see it on the feed card and in Saved, unsave from details, restart, a feed without the Product, a Product that no longer ships after the country changes).
+- Moved: the Saved provider and storage left `lib/app/features/feed/` for `lib/app/features/saved/`. No existing test changed; no golden image changes.
+- For you to know: Products saved by an earlier build (bare IDs under `saved_product_ids`) can't be shown without a snapshot, so they are dropped on the first save. Saved Products stay on this device only until the backend's Saved endpoints (#17). The price shown in Saved is the price when saved; details shows today's.
+- Choices made by the orchestrator: the empty-state and mark wording; the heart in the details top bar rather than a new button in the page; one generic "Not available any more" for both "gone" and "doesn't ship to you" (the gateway doesn't tell them apart).
+
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required checks on `main` (branch protection, #37): **`format, analyze, test`** and **`goldens`** (#35, required since 2026-11-13). The first is shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
@@ -136,7 +147,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/shopper_journey_test.dart -d web-server --browser-name=chrome --browser-dimension=430x932 --headless`
 - It found two real feed bugs: the feed card was only as tall as the search box and chips (~155px; fixed in #35, which found it too), and the Save heart sat under the search box where it couldn't be tapped (fixed in #36).
 - Not required yet: it becomes a required check on `main` once PR #53 merges.
-- Not covered because the app doesn't have it yet: the Saved screen only lists Saved Products that are in the feed currently loaded (no stored snapshot yet, #8).
+- Saved Products now come from stored snapshots (#8); the journey still finds the saved Product in the Saved tab the same way.
 
 ## Nightly Android check (#39)
 - Workflow: `.github/workflows/nightly-android.yml` (`Nightly Android check`). Runs every night at 03:00 UTC on `main`, and by hand (Actions → "Nightly Android check" → Run workflow). **Not a PR check**: never add it to the required checks.
@@ -183,7 +194,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (198 passing, 6 golden tests skipped off Linux): passing on Windows as of #7.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (231 passing, 6 golden tests skipped off Linux): passing on Windows as of #8.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
