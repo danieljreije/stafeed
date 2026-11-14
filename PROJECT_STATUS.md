@@ -13,11 +13,11 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #6 — 05 App shell, onboarding & Destination Country (2026-11-13, built by the orchestrator)
 - #7 — 06 Product details, Merchant Handoff, Share, Report (2026-11-14, built by the orchestrator)
 - #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
+- #9 — 08 Events log, debug screen & ad counter (2026-11-14, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
-| #9 — 08 Events log, debug screen & ad counter | Local agent (Flutter) |
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
 | #15 — 14 Backend first slice | Cloud agent |
 | #26 — 25 Research: pay-per-click networks | Cloud agent |
@@ -108,6 +108,27 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - For you to know: Products saved by an earlier build (bare IDs under `saved_product_ids`) can't be shown without a snapshot, so they are dropped on the first save. Saved Products stay on this device only until the backend's Saved endpoints (#17). The price shown in Saved is the price when saved; details shows today's.
 - Choices made by the orchestrator: the empty-state and mark wording; the heart in the details top bar rather than a new button in the page; one generic "Not available any more" for both "gone" and "doesn't ship to you" (the gateway doesn't tell them apart).
 
+## Events log, debug screen & ad counter (#9)
+- **Events** (`lib/app/features/events/models/event.dart`): impression, 2s view, 5s view, Skip, fast Skip, details opened, save, unsave, Not interested, share, Outbound Click, filter change, Shopping Session start/end, report. Each has a random unique ID (a UUID, so the backend can drop duplicates), its time in UTC, and what it was about: Feed Item, Product, Offer, whether the Feed Item is an Ad, dwell, and details (the new filter, the report reason, the Merchant).
+- **Buffered on the phone** (`lib/app/features/events/data/events_storage.dart`, `providers/events_provider.dart`): kept as JSON under `events_buffer`, oldest first, and still there after a restart. An entry that can't be read is skipped. Recording never gets in the Shopper's way: it never throws, and an Event the device won't store stays in memory and is stored with the next one. At most 5,000 are kept; beyond that the oldest go.
+- **What the feed records** (`lib/app/features/events/feed_watch.dart`, a pure class the feed screen drives):
+  - an **impression** each time a Feed Item comes on screen (swiping back to it, a refresh that puts a new one there, or coming back to the Feed tab counts again);
+  - a **2s view** and a **5s view** while it stays, once each;
+  - a **fast Skip** when swiped past in under 1 second, a **Skip** under 2 seconds, unless the Shopper acted on it (opened details, saved, shared, …, including through a Brand Ad's Product chips). Swiping past after 2 seconds is just a view.
+  - A new filter or another tab is never a Skip.
+- **Actions recorded**: details opened (from a feed card, a Brand Ad chip or Saved), save and unsave (once stored on the device; a failed save records nothing), share, Outbound Click (alongside the gateway's own record), report (once sent), filter change (only when the filter really changes).
+- **Profile** shows "You've watched {n} ads this week. Advertisers thank you." ("1 ad" for one), counted from this week's impressions of Ads, since Monday 00:00 local time.
+- **Debug Events screen**: Profile → **Events (debug)** (`/events`). Shows how many Events are kept and lists the newest 200: type, time, Feed Item / Product / Offer, Ad or not, dwell, details and ID.
+- Tests: `test/features/events/feed_watch_test.dart` (impression, dwell and Skip rules), `events_log_test.dart` (unique IDs and times, restart, recording while loading, failed writes, unreadable entries, the weekly counter and the Profile line), `events_flow_test.dart` (whole app on Fixtures: impression on open, 2s/5s views, Skip on a quick swipe, no Skip after saving, details/share/handoff/report recorded once, filter change, tabs, restart, Profile count, the debug screen).
+- No existing test changed; no golden image changes.
+- For you to know:
+  - **Not wired yet**, because those features don't exist: Not interested (#10), Shopping Session start/end (#11). The Event types are there; Events have an empty session reference until #11.
+  - **Nothing is sent yet.** Sending in batches to `POST /v1/events/batch` comes with #18/#19. When sent Events leave the buffer, Profile's weekly count will need its own small store, since it counts from the buffer today.
+  - Views keep counting while Product details are open over the feed (the Shopper acted on that Feed Item anyway, so it is never a Skip).
+  - The whole buffer is written on every Event. Fine at today's sizes; sending (#19) will keep it short.
+  - The debug screen is visible to everyone for now. Hide it before the first store release.
+- Choices made by the orchestrator: the Skip thresholds (fast under 1s, Skip under 2s, nothing after a 2s view); a calendar week from Monday for "this week"; a return to the Feed tab counting as a new impression; "1 ad" in the Profile line; the 5,000-Event cap; the debug screen's wording.
+
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required checks on `main` (branch protection, #37): **`format, analyze, test`** and **`goldens`** (#35, required since 2026-11-13). The first is shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
@@ -194,7 +215,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (231 passing, 6 golden tests skipped off Linux): passing on Windows as of #8.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (268 passing, 6 golden tests skipped off Linux): passing on Windows as of #9.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward

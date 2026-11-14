@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/events/events_screen.dart';
 import '../features/feed/feed_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/product/product_details_screen.dart';
@@ -22,6 +23,9 @@ abstract final class AppRoutes {
   static const search = '/search';
   static const saved = '/saved';
   static const profile = '/profile';
+
+  /// The debug Events screen, opened from Profile.
+  static const events = '/events';
 
   /// A Product's details. [offerId] is the Offer the Shopper saw, shown
   /// again if the Product still has it.
@@ -112,6 +116,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      // Opens over the tabs, so Back returns to Profile.
+      GoRoute(
+        path: AppRoutes.events,
+        builder: (context, state) => const EventsScreen(),
       ),
       // Opens over the tabs, so Back returns to the tab it came from.
       GoRoute(

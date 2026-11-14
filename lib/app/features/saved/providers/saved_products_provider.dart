@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../events/models/event.dart';
+import '../../events/providers/events_provider.dart';
+
 import '../../feed/models/offer.dart';
 import '../../feed/models/product.dart';
 import '../../feed/providers/data_gateway_provider.dart';
@@ -45,38 +48,62 @@ class SavedProductsNotifier extends AsyncNotifier<List<SavedProduct>> {
   /// them. Throws [SavedProductsWriteException] when the change couldn't be
   /// stored (or the Saved Products couldn't be read), leaving them as they
   /// were.
-  Future<void> toggle(Product product, Offer offer) => _change(
-    (current) => current.any((saved) => saved.productId == product.id)
-        ? [
-            for (final saved in current)
-              if (saved.productId != product.id) saved,
-          ]
-        : [
-            SavedProduct.snapshot(
-              product,
-              offer,
-              savedAt: ref.read(savedProductsClockProvider)(),
-            ),
-            ...current,
-          ],
-  );
+  Future<void> toggle(Product product, Offer offer) async {
+    var saving = false;
+    final changed = await _change((current) {
+      saving = !current.any((saved) => saved.productId == product.id);
+      return saving
+          ? [
+              SavedProduct.snapshot(
+                product,
+                offer,
+                savedAt: ref.read(savedProductsClockProvider)(),
+              ),
+              ...current,
+            ]
+          : [
+              for (final saved in current)
+                if (saved.productId != product.id) saved,
+            ];
+    });
+    if (changed) {
+      _record(
+        saving ? EventType.save : EventType.unsave,
+        product.id,
+        offerId: offer.id,
+      );
+    }
+  }
 
   /// Removes the Saved Product for [productId], if there is one. Throws
   /// like [toggle].
-  Future<void> remove(String productId) => _change(
-    (current) => current.any((saved) => saved.productId == productId)
-        ? [
-            for (final saved in current)
-              if (saved.productId != productId) saved,
-          ]
-        : null,
-  );
+  Future<void> remove(String productId) async {
+    final changed = await _change(
+      (current) => current.any((saved) => saved.productId == productId)
+          ? [
+              for (final saved in current)
+                if (saved.productId != productId) saved,
+            ]
+          : null,
+    );
+    if (changed) _record(EventType.unsave, productId);
+  }
+
+  /// Records a save or unsave, once it is stored.
+  void _record(EventType type, String productId, {String? offerId}) {
+    if (!ref.mounted) return;
+    unawaited(
+      ref
+          .read(eventsLogProvider.notifier)
+          .record(NewEvent(type, productId: productId, offerId: offerId)),
+    );
+  }
 
   /// Applies [update] to the latest Saved Products, shows the result
-  /// straight away and stores it. [update] returns null for no change. If
-  /// storing fails, the list goes back to what it was and the failure is
-  /// thrown.
-  Future<void> _change(
+  /// straight away and stores it. [update] returns null for no change.
+  /// True when something changed and was stored. If storing fails, the list
+  /// goes back to what it was and the failure is thrown.
+  Future<bool> _change(
     List<SavedProduct>? Function(List<SavedProduct> current) update,
   ) async {
     if (!state.hasValue) {
@@ -90,7 +117,7 @@ class SavedProductsNotifier extends AsyncNotifier<List<SavedProduct>> {
     // Read after any wait, so a change made meanwhile isn't lost.
     final previous = state.requireValue;
     final updated = update(previous);
-    if (updated == null) return;
+    if (updated == null) return false;
     state = AsyncData(updated);
 
     final storage = ref.read(savedProductsStorageProvider);
@@ -106,6 +133,7 @@ class SavedProductsNotifier extends AsyncNotifier<List<SavedProduct>> {
       }
       throw SavedProductsWriteException(error);
     }
+    return true;
   }
 }
 

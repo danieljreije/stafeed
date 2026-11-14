@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../events/models/event.dart';
+import '../events/providers/events_provider.dart';
 import '../feed/models/media.dart';
 import '../feed/models/offer.dart';
 import '../feed/models/product.dart';
@@ -105,6 +107,16 @@ class ProductDetailsScreen extends ConsumerWidget {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
+    _recordEvent(
+      ref,
+      NewEvent(
+        EventType.outboundClick,
+        productId: product.id,
+        offerId: offer.id,
+        details: {'merchant': offer.merchant},
+      ),
+    );
+
     // Recorded on the way out: the Shopper never waits for it, and a
     // failure to record never keeps them from the Merchant.
     unawaited(
@@ -142,6 +154,10 @@ class ProductDetailsScreen extends ConsumerWidget {
 
   Future<void> _share(WidgetRef ref, Product product, Offer? offer) {
     final isSampleData = ref.read(dataGatewayProvider).servesSampleData;
+    _recordEvent(
+      ref,
+      NewEvent(EventType.share, productId: product.id, offerId: offer?.id),
+    );
 
     return ref
         .read(shareSheetProvider)
@@ -158,6 +174,7 @@ class ProductDetailsScreen extends ConsumerWidget {
     Offer? offer,
   ) async {
     final gateway = ref.read(dataGatewayProvider);
+    final events = ref.read(eventsLogProvider.notifier);
     final messenger = ScaffoldMessenger.of(context);
 
     final picked = await Navigator.of(context).push<ReportChoice>(
@@ -186,12 +203,26 @@ class ProductDetailsScreen extends ConsumerWidget {
       return;
     }
 
+    unawaited(
+      events.record(
+        NewEvent(
+          EventType.report,
+          productId: product.id,
+          offerId: offer?.id,
+          details: {'reason': picked.reason.name},
+        ),
+      ),
+    );
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         const SnackBar(content: Text("Thanks. We'll take a look.")),
       );
   }
+
+  /// Records [event] without making the Shopper wait for it.
+  static void _recordEvent(WidgetRef ref, NewEvent event) =>
+      unawaited(ref.read(eventsLogProvider.notifier).record(event));
 }
 
 class _Details extends ConsumerWidget {
