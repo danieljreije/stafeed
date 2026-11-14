@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../events/feed_watch.dart';
 import '../events/models/event.dart';
 import '../events/providers/events_provider.dart';
+import '../not_interested/not_interested_action.dart';
 import '../product/open_product_details.dart';
 import 'models/feed_filter.dart';
 import 'models/feed_item.dart';
@@ -297,6 +298,14 @@ class _FeedPagesState extends ConsumerState<_FeedPages> {
                   isSaved: savedProductIds.contains(item.product.id),
                   onSaveToggle: () =>
                       toggleSaved(context, ref, item.product, item.offer),
+                  onNotInterested: () => markNotInterested(
+                    context,
+                    ref,
+                    item.product.id,
+                    offerId: item.offer.id,
+                    feedItemId: item.id,
+                    isAd: item.isAd,
+                  ),
                   onOpen: () => openProductDetails(
                     context,
                     ref,

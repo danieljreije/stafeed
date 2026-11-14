@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stafeed/app/features/feed/data/fixture_data_gateway.dart';
 import 'package:stafeed/app/features/feed/models/feed_filter.dart';
 import 'package:stafeed/app/features/feed/models/feed_item.dart';
+import 'package:stafeed/app/features/feed/models/feed_page.dart';
 import 'package:stafeed/app/features/feed/widgets/product_card.dart';
 import 'package:stafeed/main.dart' as app;
 
@@ -93,6 +94,42 @@ Future<void> waitForCard(WidgetTester tester, AffiliateAd item) => waitFor(
           1,
 );
 
+/// Every Feed Item of a feed, page after page, from [gateway].
+Future<List<FeedItem>> wholeFeed(
+  FixtureDataGateway gateway, {
+  FeedFilter filter = const FeedFilter(),
+}) async {
+  final items = <FeedItem>[];
+  FeedCursor? cursor;
+  do {
+    final page = await gateway.getFeedPage(filter: filter, cursor: cursor);
+    items.addAll(page.items);
+    cursor = page.nextCursor;
+  } while (cursor != null);
+  return items;
+}
+
+/// The card filling the feed is one of [items], whichever the ranking put
+/// first. For You is ranked from what the Shopper did (#10): this journey's
+/// swipes, views and save, whose exact weights depend on timing. So once
+/// the Shopper has acted, a new feed is checked for what it holds, not for
+/// its order.
+Future<void> waitForCardFrom(
+  WidgetTester tester,
+  String what,
+  List<FeedItem> items,
+) => waitFor(tester, 'a card from $what to be the only card on screen', () {
+  final cards = find.byType(ProductCard).evaluate().length;
+  return items.any(
+    (item) => switch (item) {
+      ProductFeedItem(:final product) =>
+        cards == 1 && find.text(product.title).evaluate().length == 1,
+      BrandAd(:final headline) =>
+        cards == 0 && find.text(headline).evaluate().length == 1,
+    },
+  );
+});
+
 /// Taps one of the four tabs at the bottom of the app.
 Future<void> openTab(WidgetTester tester, String label) async {
   final tab = find.widgetWithText(NavigationDestination, label);
@@ -145,18 +182,20 @@ void main() {
     final gateway = FixtureDataGateway(destinationCountry: 'US');
     final forYou = affiliateAds((await gateway.getFeedPage()).items);
     const query = 'Kestrel';
-    final searched = affiliateAds(
-      (await gateway.getFeedPage(filter: const FeedFilter(query: query))).items,
+    final searched = await wholeFeed(
+      gateway,
+      filter: const FeedFilter(query: query),
     );
-    final watches = affiliateAds(
-      (await gateway.getFeedPage(filter: const FeedFilter(category: 'watches')))
-          .items,
+    final watches = await wholeFeed(
+      gateway,
+      filter: const FeedFilter(category: 'watches'),
     );
+    final everything = await wholeFeed(gateway);
     expect(forYou.length, greaterThanOrEqualTo(3));
     expect(searched, isNotEmpty);
-    expect(searched.first.product.id, isNot(forYou.first.product.id));
+    // So a card from the search proves the feed changed.
+    expect(searched.map((item) => item.id), isNot(contains(forYou[2].id)));
     expect(watches, isNotEmpty);
-    expect(watches.first.product.id, isNot(forYou.first.product.id));
 
     // A fresh Shopper: nothing saved, and no onboarding done, in an earlier
     // run in this browser.
@@ -232,7 +271,7 @@ void main() {
 
     // Search.
     await tester.enterText(find.byType(TextField), query);
-    await waitForCard(tester, searched.first);
+    await waitForCardFrom(tester, 'the "$query" search', searched);
 
     // A search with no matches shows the empty state, with the search box,
     // chips and sample-data marker still there.
@@ -248,7 +287,7 @@ void main() {
     // The controls still work from the empty state: a category filter
     // replaces the search...
     await tester.tap(find.widgetWithText(ChoiceChip, 'Watches'));
-    await waitForCard(tester, watches.first);
+    await waitForCardFrom(tester, 'the Watches category', watches);
     expect(find.text('No matches'), findsNothing);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
@@ -257,6 +296,13 @@ void main() {
 
     // ...and All brings For You back.
     await tester.tap(find.widgetWithText(ChoiceChip, 'All'));
-    await waitForCard(tester, forYou[0]);
+    await waitFor(
+      tester,
+      'the All chip to be selected',
+      () => tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'All'))
+          .selected,
+    );
+    await waitForCardFrom(tester, 'For You', everything);
   });
 }

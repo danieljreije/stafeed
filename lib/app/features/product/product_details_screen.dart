@@ -13,6 +13,7 @@ import '../feed/providers/data_gateway_provider.dart';
 import '../feed/widgets/feed_item_labels.dart';
 import '../feed/widgets/media_carousel.dart';
 import '../feed/widgets/sample_data_marker.dart';
+import '../not_interested/not_interested_action.dart';
 import '../saved/providers/saved_products_provider.dart';
 import '../saved/save_action.dart';
 import 'fixture_merchant_screen.dart';
@@ -66,6 +67,11 @@ class ProductDetailsScreen extends ConsumerWidget {
               tooltip: 'Report',
               icon: const Icon(Icons.flag_outlined),
               onPressed: () => _report(context, ref, product, offer),
+            ),
+            IconButton(
+              tooltip: 'Not interested',
+              icon: const Icon(Icons.block),
+              onPressed: () => _notInterested(context, ref, product, offer),
             ),
           ],
         ],
@@ -218,6 +224,26 @@ class ProductDetailsScreen extends ConsumerWidget {
       ..showSnackBar(
         const SnackBar(content: Text("Thanks. We'll take a look.")),
       );
+  }
+
+  /// Marks the Product Not interested and goes back: it is gone from the
+  /// feed the Shopper returns to.
+  void _notInterested(
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+    Offer? offer,
+  ) {
+    unawaited(
+      markNotInterested(
+        context,
+        ref,
+        product.id,
+        offerId: offer?.id,
+        isAd: offer?.isAffiliate,
+      ),
+    );
+    Navigator.of(context).maybePop();
   }
 
   /// Records [event] without making the Shopper wait for it.

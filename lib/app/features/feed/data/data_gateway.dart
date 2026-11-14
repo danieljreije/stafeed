@@ -37,4 +37,8 @@ abstract interface class DataGateway {
 
   /// Stores a Shopper's report about a Product.
   Future<void> submitReport(ProductReport report);
+
+  /// Records that the Shopper is Not interested in a Product: no feed
+  /// serves it again.
+  Future<void> markNotInterested(String productId);
 }

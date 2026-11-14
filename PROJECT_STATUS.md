@@ -14,6 +14,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #7 — 06 Product details, Merchant Handoff, Share, Report (2026-11-14, built by the orchestrator)
 - #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
 - #9 — 08 Events log, debug screen & ad counter (2026-11-14, built by the orchestrator)
+- #10 — 09 Ranking + Not interested (2026-11-14, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
@@ -77,7 +78,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Fixed on the way: a Saved Product whose picture failed to load broke the layout of its row in Saved. The picture now sits in a fixed box with a broken-image icon as fallback.
 - Not done here, for you to know:
   - **Currency is stored but prices aren't converted.** Each price still shows in its Offer's own currency (USD or GBP on Fixtures). Converting needs exchange rates, which no ticket covers yet.
-  - **Interests are stored but don't change the feed yet.** Ranking (#10) uses them.
+  - **Interests are stored** and, since #10, lead For You (see below).
   - **Profile is read-only**: it shows the country, currency and interests. Changing them is #13.
   - **Search tab is simple**: a search box and the category list; either one filters the Feed and takes you there. The search box and chips on the Feed are still there too. Shopping Sessions (#11) will take over this tab.
   - The launcher label and browser tab title still say "stafeed" in `android/`, `ios/` and `web/`; those files can't read the Dart name. They change with the final name (#30).
@@ -122,12 +123,37 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Tests: `test/features/events/feed_watch_test.dart` (impression, dwell and Skip rules), `events_log_test.dart` (unique IDs and times, restart, recording while loading, failed writes, unreadable entries, the weekly counter and the Profile line), `events_flow_test.dart` (whole app on Fixtures: impression on open, 2s/5s views, Skip on a quick swipe, no Skip after saving, details/share/handoff/report recorded once, filter change, tabs, restart, Profile count, the debug screen).
 - No existing test changed; no golden image changes.
 - For you to know:
-  - **Not wired yet**, because those features don't exist: Not interested (#10), Shopping Session start/end (#11). The Event types are there; Events have an empty session reference until #11.
+  - **Not wired yet**, because that feature doesn't exist: Shopping Session start/end (#11). Not interested is recorded since #10. The Event types are there; Events have an empty session reference until #11.
   - **Nothing is sent yet.** Sending in batches to `POST /v1/events/batch` comes with #18/#19. When sent Events leave the buffer, Profile's weekly count will need its own small store, since it counts from the buffer today.
   - Views keep counting while Product details are open over the feed (the Shopper acted on that Feed Item anyway, so it is never a Skip).
   - The whole buffer is written on every Event. Fine at today's sizes; sending (#19) will keep it short.
   - The debug screen is visible to everyone for now. Hide it before the first store release.
 - Choices made by the orchestrator: the Skip thresholds (fast under 1s, Skip under 2s, nothing after a 2s view); a calendar week from Monday for "this week"; a return to the Feed tab counting as a new impression; "1 ad" in the Profile line; the 5,000-Event cap; the debug screen's wording.
+
+## Ranking + Not interested (#10)
+- **Ranking module** (`lib/app/features/ranking/ranking.dart`, spec Seam 3): a pure function. Input: candidate Feed Items, the Shopper's interests, long-term taste signals, the active Shopping Session (goal and its own signals), Feed Items already shown, the Not interested set, the Destination Country and the Brand shown just before. Output: the order to show them in.
+  - Leaves out what is out of stock, doesn't ship there, was already shown or is Not interested (a Brand Ad loses those Products from its chips). For You only takes Ads. In a Shopping Session a Brand Ad only shows when one of its Products matches the goal.
+  - Score: source relevance 40%, intent match 20% (For You: one of the Shopper's interests; session: the goal), session taste 15% (sessions only, never For You), long-term taste 10%, quality 5%, freshness 5%, plus a small bonus for paid Ads so they win near-ties against Not an Ad.
+  - Taste: each signal adds its weight to the Product's Brand, category and price band (Not interested −5, fast skip −2, skip −1, 2s view +0.5, 5s view +1 in all, details +2, share +3, save +4, Outbound Click +5).
+  - Then never the same Brand twice in a row, and every 20th Feed Item is the best one whose Brand and category the taste knows nothing about (the spec's 5% exploration).
+- **Weights live in config**: `shared/ranking/ranking_config.json`, mirrored in `lib/app/features/ranking/ranking_config.dart` (a test keeps them equal).
+- **Shared scenarios** for #15's TypeScript ranking: `shared/ranking/scenarios.json` (12 scenarios: cold start, Not interested demotion, session vs For You, no same Brand twice in a row, paid Ads before Not an Ad on near-ties, no repeats in a session, Brand Ad goal matching, save and skip, exploration), format and rules in `shared/ranking/README.md`. Dart runs them in `test/features/ranking/ranking_scenarios_test.dart`.
+- **Fixture gateway ranks For You** (`fixture_data_gateway.dart`). Each page is ranked afresh from the Shopper's taste at that moment, so a save or a Not interested changes the pages still to come, never the ones on screen. The cursor carries what was already shown (nothing repeats) and the last Brand. Fixtures have no relevance of their own: they count as equally relevant and their order breaks ties, so a brand-new Shopper who skipped interests still sees the Fixtures in their usual order, except that each Brand Ad now comes one Feed Item later when its last linked Product is by its own Brand.
+- **Where the taste comes from** (`data_gateway_provider.dart`, `ranking/shopper_taste.dart`): interests from onboarding, the Not interested set, and the long-term signals in the Events log (Events outside a Shopping Session that say something about taste; impressions, unsaves, reports and filter changes don't).
+- **Not interested**: a button under Save on every Product card ("Nope", tooltip "Not interested"), and in the details screen's top bar (which then goes back to the feed). It records a Not interested Event, takes the Product out of the feed at once (and out of any page already on its way; a Brand Ad loses it from its chips), keeps it on the device (`lib/app/features/not_interested/`, key `not_interested_products`) and tells the gateway (`DataGateway.markNotInterested`). It never comes back in any feed, also after a restart. "Got it. You won't see that one again." If the device won't keep it, it is hidden until the app closes and the Shopper is told.
+- Tests: `test/features/ranking/` (scenarios, config equality, signals and Events), `test/features/feed/data/fixture_ranking_test.dart` (Brand rule in every country and filter, interests first, Not interested hidden and demoted, taste read per page with no repeats), `test/features/feed/providers/feed_hide_product_test.dart`, `test/features/not_interested/` (storage, and the whole app: from the feed card, from details, restart, a failed write, interests leading For You, demotion through the real Events log).
+- Changed on purpose, because #10 asks for it:
+  - `fixture_data_gateway_test.dart`: "each Brand Ad comes right after the last of its linked Products" now allows one Feed Item more when that Product is by the Brand Ad's own Brand (never the same Brand twice in a row); "holds exactly the Fixtures that ship there" now compares in any order (the Brand rule reorders a few).
+  - The web end-to-end test: after the Shopper swipes and saves, the search, Watches and All steps check for a card from that feed instead of its first one (see "Web end-to-end test" below).
+  - The two test fake gateways gained `markNotInterested`.
+  - The Affiliate Ad and Not an Ad golden images change: they gain the Not interested button.
+- For you to know:
+  - Not interested only hides a Product from feeds. Its details still open (from Saved, say), and it stays in Saved if it was saved.
+  - Not interested lowers the Brand and category through the Events log, which keeps the newest 5,000 Events; the hiding itself is kept separately and for good.
+  - Price bands ignore the currency (edges at 50, 150 and 300 in the price's own currency).
+  - Shopping Sessions (#11) will call the same ranking with the session's goal and signals; nothing in the app uses the session part yet.
+  - "Already shown" means already shown in this feed: a refresh or a new filter starts again from the top, ranked with the latest taste.
+- Choices made by the orchestrator: exploration as every 20th Feed Item rather than a score bonus (a bonus made one save rank similar Products lower); affinities squashed as `a / (|a| + 5)`; a 0.02 near-tie bonus for paid Ads; price band edges; equal relevance for every Fixture; the "Nope" label and block icon; the wording of the two messages.
 
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
@@ -169,6 +195,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - It found two real feed bugs: the feed card was only as tall as the search box and chips (~155px; fixed in #35, which found it too), and the Save heart sat under the search box where it couldn't be tapped (fixed in #36).
 - Not required yet: it becomes a required check on `main` once PR #53 merges.
 - Saved Products now come from stored snapshots (#8); the journey still finds the saved Product in the Saved tab the same way.
+- Since #10 For You is ranked from what the Shopper did, and this journey swipes and saves, so the order of a later feed depends on timing. The first three cards are still checked exactly (they load before any Event); the search, the Watches chip and All are checked for showing a card from that feed.
 
 ## Nightly Android check (#39)
 - Workflow: `.github/workflows/nightly-android.yml` (`Nightly Android check`). Runs every night at 03:00 UTC on `main`, and by hand (Actions → "Nightly Android check" → Run workflow). **Not a PR check**: never add it to the required checks.
@@ -215,13 +242,13 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (268 passing, 6 golden tests skipped off Linux): passing on Windows as of #9.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (302 passing, 6 golden tests skipped off Linux): passing on Windows as of #10.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
 - The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
 - Fixture images load from picsum.photos, so cards show a placeholder when offline.
-- Prices aren't converted to the Shopper's currency, and interests don't change the feed yet (see #6 above).
+- Prices aren't converted to the Shopper's currency (see #6 above).
 
 ## Launch country
 Undecided (decided in #24 based on Awin approvals).

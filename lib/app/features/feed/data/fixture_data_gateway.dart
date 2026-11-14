@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'dart:math';
 
+import '../../ranking/ranking.dart';
+import '../../ranking/ranking_config.dart';
+import '../../ranking/shopper_taste.dart';
 import '../models/feed_filter.dart';
 import '../models/feed_item.dart';
 import '../models/feed_page.dart';
@@ -15,8 +17,11 @@ import 'fixtures/fixture_products.dart';
 /// Serves the Fixtures offline and deterministically.
 ///
 /// For You only takes Ads, so Products without an available affiliate Offer
-/// (Not an Ad) are left out of the feed. Each Brand Ad comes right after the
-/// last of its linked Products in the feed.
+/// (Not an Ad) are left out of the feed. The ranking orders For You from the
+/// Shopper's taste. Fixtures have no relevance of their own, so they are all
+/// equally relevant and their order breaks ties: each Brand Ad sits right
+/// after the last of its linked Products, and a Feed Item that would follow
+/// its own Brand moves down.
 ///
 /// Given a Destination Country, it never serves an Offer that doesn't ship
 /// there: each Affiliate Ad shows the Product's first Offer that does, a
@@ -29,18 +34,27 @@ class FixtureDataGateway implements DataGateway {
     List<ProductCategory>? categories,
     this.pageSize = defaultPageSize,
     String? destinationCountry,
+    this.taste,
+    this.rankingConfig = defaultRankingConfig,
   }) : destinationCountry = destinationCountry?.toUpperCase(),
        _products = products ?? fixtureProducts,
        _brandAds = brandAds ?? fixtureBrandAds,
        _categories = categories ?? fixtureCategories;
 
   static const int defaultPageSize = 10;
-  static const String _cursorPrefix = 'fx1.';
+  static const String _cursorPrefix = 'fx2.';
 
   final List<Product> _products;
   final List<BrandAd> _brandAds;
   final List<ProductCategory> _categories;
   final int pageSize;
+
+  /// Where For You's ranking learns the Shopper's taste, asked once per
+  /// page. Without it, For You is ranked as for a brand-new Shopper.
+  final Future<ShopperTaste> Function()? taste;
+
+  /// The weights For You is ranked with.
+  final RankingConfig rankingConfig;
 
   /// ISO 3166-1 alpha-2 code of the Shopper's Destination Country. Null
   /// (no Shopper yet) serves every Fixture.
@@ -64,23 +78,138 @@ class FixtureDataGateway implements DataGateway {
     );
   }
 
+  /// Each page is ranked afresh (see [rank]) from what the Shopper's taste
+  /// is at that moment, leaving out what earlier pages of the same feed
+  /// showed. So a Not interested or a save changes the pages still to come,
+  /// and nothing shows twice.
   @override
   Future<FeedPage> getFeedPage({
     FeedFilter filter = const FeedFilter(),
     FeedCursor? cursor,
   }) async {
     final fingerprint = _fingerprint(filter);
-    final offset = cursor == null ? 0 : _readCursor(cursor, fingerprint);
+    final position = cursor == null
+        ? const _Position()
+        : _readCursor(cursor, fingerprint);
+    final shopper = await (taste?.call() ?? Future.value(const ShopperTaste()));
 
     final matches = _forYou().where((item) => _matches(item, filter)).toList();
-    final start = min(offset, matches.length);
-    final end = min(start + pageSize, matches.length);
-    final items = matches.sublist(start, end);
+    final byId = {for (final item in matches) item.id: item};
+
+    final ranked = rank(
+      RankingInput(
+        feed: RankedFeed.forYou,
+        candidates: [for (final item in matches) _candidate(item)],
+        interests: shopper.interests,
+        longTermSignals: _signals(shopper.signals),
+        recentlyShown: position.shown.toSet(),
+        notInterested: {...shopper.notInterested, ..._notInterested},
+        previousBrand: position.lastBrand,
+      ),
+      rankingConfig,
+    );
+
+    final items = [
+      for (final candidate in ranked.take(pageSize))
+        _feedItem(byId[candidate.id]!, candidate),
+    ];
+    final hasMore = ranked.length > items.length;
 
     return FeedPage(
       items: items,
-      nextCursor: end < matches.length ? _writeCursor(end, fingerprint) : null,
+      nextCursor: hasMore
+          ? _writeCursor(
+              _Position(
+                shown: [...position.shown, for (final item in items) item.id],
+                lastBrand: ranked[items.length - 1].brand,
+              ),
+              fingerprint,
+            )
+          : null,
     );
+  }
+
+  /// Product IDs marked Not interested on this gateway. Kept in memory only;
+  /// the app keeps its own copy on the device and passes it in through the
+  /// Shopper's taste.
+  Set<String> get notInterestedProductIds => Set.unmodifiable(_notInterested);
+  final Set<String> _notInterested = {};
+
+  @override
+  Future<void> markNotInterested(String productId) async {
+    _notInterested.add(productId);
+  }
+
+  RankingCandidate _candidate(FeedItem item) => RankingCandidate(
+    id: item.id,
+    kind: switch (item) {
+      AffiliateAd() => CandidateKind.affiliateAd,
+      NotAnAd() => CandidateKind.notAnAd,
+      BrandAd() => CandidateKind.brandAd,
+    },
+    brand: switch (item) {
+      BrandAd(:final brand) => brand,
+      ProductFeedItem(:final product) => product.brand,
+    },
+    products: [
+      for (final product in item.products)
+        _rankedProduct(
+          product,
+          item is ProductFeedItem ? item.offer : _adOffer(product),
+        ),
+    ],
+    relevance: 1,
+  );
+
+  /// [item] as ranked: a Brand Ad keeps only the linked Products the ranking
+  /// kept.
+  static FeedItem _feedItem(FeedItem item, RankingCandidate ranked) {
+    if (item is! BrandAd || ranked.products.length == item.products.length) {
+      return item;
+    }
+    final kept = {for (final product in ranked.products) product.id};
+    return BrandAd(
+      id: item.id,
+      brand: item.brand,
+      headline: item.headline,
+      media: item.media,
+      products: [
+        for (final product in item.products)
+          if (kept.contains(product.id)) product,
+      ],
+    );
+  }
+
+  late final Map<String, Product> _productsById = {
+    for (final product in _products) product.id: product,
+  };
+
+  /// [signals] about Products this gateway knows. Others are left out.
+  List<TasteSignal> _signals(List<ProductSignal> signals) {
+    return [
+      for (final signal in signals)
+        if (_productsById[signal.productId] case final product?)
+          TasteSignal(signal.type, _rankedProduct(product, _adOffer(product))),
+    ];
+  }
+
+  static RankedProduct _rankedProduct(Product product, Offer? offer) =>
+      RankedProduct(
+        id: product.id,
+        title: product.title,
+        brand: product.brand,
+        category: product.category,
+        priceMinor: offer?.price.minorUnits,
+      );
+
+  /// The Offer a Product would show as an Ad here, or its first Offer.
+  Offer? _adOffer(Product product) {
+    for (final offer in product.offers) {
+      if (offer.isAffiliate && offer.isAvailable && _shipsHere(offer)) {
+        return offer;
+      }
+    }
+    return product.offers.firstOrNull;
   }
 
   /// Every Outbound Click recorded on this gateway, oldest first. Kept in
@@ -233,14 +362,18 @@ class FixtureDataGateway implements DataGateway {
       '${destinationCountry ?? ''}|${filter.category ?? ''}|'
       '${_words(filter.query).join(' ')}';
 
-  static FeedCursor _writeCursor(int offset, String fingerprint) {
-    final payload = jsonEncode({'o': offset, 'f': fingerprint});
+  static FeedCursor _writeCursor(_Position position, String fingerprint) {
+    final payload = jsonEncode({
+      's': position.shown,
+      'b': position.lastBrand,
+      'f': fingerprint,
+    });
     return FeedCursor(
       '$_cursorPrefix${base64Url.encode(utf8.encode(payload))}',
     );
   }
 
-  static int _readCursor(FeedCursor cursor, String fingerprint) {
+  static _Position _readCursor(FeedCursor cursor, String fingerprint) {
     final token = cursor.token;
 
     try {
@@ -249,11 +382,11 @@ class FixtureDataGateway implements DataGateway {
         utf8.decode(base64Url.decode(token.substring(_cursorPrefix.length))),
       ) as Map<String, dynamic>;
 
-      final offset = payload['o'] as int;
-      if (payload['f'] != fingerprint || offset < 0) {
-        throw const FormatException();
-      }
-      return offset;
+      if (payload['f'] != fingerprint) throw const FormatException();
+      return _Position(
+        shown: (payload['s'] as List).cast<String>().toList(),
+        lastBrand: payload['b'] as String?,
+      );
     } on Object {
       throw ArgumentError.value(
         cursor,
@@ -262,4 +395,13 @@ class FixtureDataGateway implements DataGateway {
       );
     }
   }
+}
+
+/// How far a feed has got: the Feed Items its pages showed, in order, and
+/// the Brand of the last one. Carried inside the cursor.
+class _Position {
+  const _Position({this.shown = const [], this.lastBrand});
+
+  final List<String> shown;
+  final String? lastBrand;
 }
