@@ -1,0 +1,1903 @@
+{
+  "categories": [
+    {
+      "id": "sneakers",
+      "label": "Sneakers"
+    },
+    {
+      "id": "bags",
+      "label": "Bags"
+    },
+    {
+      "id": "watches",
+      "label": "Watches"
+    },
+    {
+      "id": "tech-accessories",
+      "label": "Tech accessories"
+    },
+    {
+      "id": "home-decor",
+      "label": "Home decor"
+    }
+  ],
+  "products": [
+    {
+      "id": "fixture-snk-01",
+      "title": "Air Runner",
+      "description": "Air Runner by Northstar. Sample product for testing; not real inventory.",
+      "brand": "Northstar",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-01/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-01",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 12900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-01",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-02",
+      "title": "Tempo Glide",
+      "description": "Tempo Glide by Kestrel. Sample product for testing; not real inventory.",
+      "brand": "Kestrel",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-02/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-02",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 14500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-02",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-03",
+      "title": "Long Mile 3",
+      "description": "Long Mile 3 by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-03/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-03",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 11000,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-03",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-04",
+      "title": "Pace Lite",
+      "description": "Pace Lite by Northstar. Sample product for testing; not real inventory.",
+      "brand": "Northstar",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-04/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-04",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 9900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/snk-04",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-05",
+      "title": "Trail Spark",
+      "description": "Trail Spark by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-05/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-05",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 13500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-05",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-06",
+      "title": "Cloud Stride",
+      "description": "Cloud Stride by Kestrel. Sample product for testing; not real inventory.",
+      "brand": "Kestrel",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Running"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-06/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-06",
+          "merchant": "Catalog Sample Store",
+          "price": {
+            "minorUnits": 15900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-06",
+          "monetisation": "none",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-07",
+      "title": "Street Classic",
+      "description": "Street Classic by Ferrovia. Sample product for testing; not real inventory.",
+      "brand": "Ferrovia",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-07/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-07",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 8900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-07",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-08",
+      "title": "White Court Low",
+      "description": "White Court Low by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-08/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-08",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 9500,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-08",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-09",
+      "title": "Canvas Daybreak",
+      "description": "Canvas Daybreak by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-09/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-09",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 6500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-09",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-10",
+      "title": "Suede Slip-On",
+      "description": "Suede Slip-On by Ferrovia. Sample product for testing; not real inventory.",
+      "brand": "Ferrovia",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-10/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-10",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 7900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-10",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-11",
+      "title": "Retro Court 84",
+      "description": "Retro Court 84 by Northstar. Sample product for testing; not real inventory.",
+      "brand": "Northstar",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-11/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-11",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 11900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-11",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-12",
+      "title": "Weekend Knit",
+      "description": "Weekend Knit by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Casual"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-12/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-12",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 8500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/snk-12",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-13",
+      "title": "Hangtime High",
+      "description": "Hangtime High by Kestrel. Sample product for testing; not real inventory.",
+      "brand": "Kestrel",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-13/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-13",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 17900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-13",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-14",
+      "title": "Baseline Pro",
+      "description": "Baseline Pro by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-14/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-14",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 16500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-14",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-15",
+      "title": "Fast Break Mid",
+      "description": "Fast Break Mid by Ferrovia. Sample product for testing; not real inventory.",
+      "brand": "Ferrovia",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-15/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-15",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 13900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-15",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-16",
+      "title": "Rim Rocker",
+      "description": "Rim Rocker by Northstar. Sample product for testing; not real inventory.",
+      "brand": "Northstar",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-16/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-16",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 14900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-16",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-17",
+      "title": "Crossover Low",
+      "description": "Crossover Low by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-17/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-17",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 12500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-17",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-18",
+      "title": "Full Court 2",
+      "description": "Full Court 2 by Kestrel. Sample product for testing; not real inventory.",
+      "brand": "Kestrel",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Basketball"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-18/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-18",
+          "merchant": "Catalog Sample Store",
+          "price": {
+            "minorUnits": 18900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-18",
+          "monetisation": "none",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-19",
+      "title": "Ridge Boot",
+      "description": "Ridge Boot by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-19/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-19",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 19900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-19",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-20",
+      "title": "Urban Hiker",
+      "description": "Urban Hiker by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-20/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-20",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 17500,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-20",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-21",
+      "title": "Chelsea Sneakboot",
+      "description": "Chelsea Sneakboot by Ferrovia. Sample product for testing; not real inventory.",
+      "brand": "Ferrovia",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-21/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-21",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 15500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-21",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-22",
+      "title": "Snowline Mid",
+      "description": "Snowline Mid by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-22/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-22",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 21900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/snk-22",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-23",
+      "title": "Desert Lace-Up",
+      "description": "Desert Lace-Up by Northstar. Sample product for testing; not real inventory.",
+      "brand": "Northstar",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-23/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-23",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 13900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/snk-23",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-snk-24",
+      "title": "Workday Boot",
+      "description": "Workday Boot by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "sneakers",
+      "attributes": {
+        "style": "Boots"
+      },
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-snk-24/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-snk-24",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 16900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/snk-24",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-01",
+      "title": "Everyday Tote",
+      "description": "Everyday Tote by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-01/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-01",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 6900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/bag-01",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-02",
+      "title": "Commuter Backpack",
+      "description": "Commuter Backpack by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-02/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-02",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 11900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/bag-02",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-03",
+      "title": "Mini Crossbody",
+      "description": "Mini Crossbody by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-03/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-03",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 5900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/bag-03",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-04",
+      "title": "Weekender Duffel",
+      "description": "Weekender Duffel by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-04/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-04",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 14900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/bag-04",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-05",
+      "title": "Laptop Sleeve 14\"",
+      "description": "Laptop Sleeve 14\" by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-05/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-05",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 4500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/bag-05",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-06",
+      "title": "Canvas Messenger",
+      "description": "Canvas Messenger by Ferrovia. Sample product for testing; not real inventory.",
+      "brand": "Ferrovia",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-06/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-06",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 7900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/bag-06",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-07",
+      "title": "Roll-Top Pack",
+      "description": "Roll-Top Pack by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-07/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-07",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 9900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/bag-07",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-bag-08",
+      "title": "Leather Belt Bag",
+      "description": "Leather Belt Bag by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "bags",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-bag-08/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-bag-08",
+          "merchant": "Catalog Sample Store",
+          "price": {
+            "minorUnits": 8500,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/bag-08",
+          "monetisation": "none",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-01",
+      "title": "Field Automatic",
+      "description": "Field Automatic by Quillon. Sample product for testing; not real inventory.",
+      "brand": "Quillon",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-01/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-01",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 34900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/wat-01",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-02",
+      "title": "Minimal Mesh 38",
+      "description": "Minimal Mesh 38 by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-02/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-02",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 12900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/wat-02",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-03",
+      "title": "Dive 200",
+      "description": "Dive 200 by Quillon. Sample product for testing; not real inventory.",
+      "brand": "Quillon",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-03/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-03",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 42900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/wat-03",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-04",
+      "title": "Chrono Sport",
+      "description": "Chrono Sport by Kestrel. Sample product for testing; not real inventory.",
+      "brand": "Kestrel",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-04/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-04",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 22900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/wat-04",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-05",
+      "title": "Pocket Square Dial",
+      "description": "Pocket Square Dial by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-05/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-05",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 15900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/wat-05",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-06",
+      "title": "Solar Field",
+      "description": "Solar Field by Quillon. Sample product for testing; not real inventory.",
+      "brand": "Quillon",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-06/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-06",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 27500,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/wat-06",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-07",
+      "title": "Smart Band Lite",
+      "description": "Smart Band Lite by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-07/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-07",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 7900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/wat-07",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-wat-08",
+      "title": "GMT Traveller",
+      "description": "GMT Traveller by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "watches",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-wat-08/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-wat-08",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 129900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/wat-08",
+          "monetisation": "affiliate",
+          "availability": "out_of_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-01",
+      "title": "Wireless Earbuds",
+      "description": "Wireless Earbuds by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-01/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-01",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 8900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/tec-01",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-02",
+      "title": "Fast Charger 65W",
+      "description": "Fast Charger 65W by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-02/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-02",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 4900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/tec-02",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-03",
+      "title": "Magnetic Power Bank",
+      "description": "Magnetic Power Bank by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-03/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-03",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 5900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/tec-03",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-04",
+      "title": "Mechanical Keyboard",
+      "description": "Mechanical Keyboard by Quillon. Sample product for testing; not real inventory.",
+      "brand": "Quillon",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-04/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-04",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 13900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/tec-04",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-05",
+      "title": "Phone Grip Stand",
+      "description": "Phone Grip Stand by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-05/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-05",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 1900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/tec-05",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-06",
+      "title": "Noise-Cancelling Headphones",
+      "description": "Noise-Cancelling Headphones by Orbitline. Sample product for testing; not real inventory.",
+      "brand": "Orbitline",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-06/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-06",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 24900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/tec-06",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-07",
+      "title": "USB-C Hub 7-in-1",
+      "description": "USB-C Hub 7-in-1 by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-07/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-07",
+          "merchant": "Demo Street Store",
+          "price": {
+            "minorUnits": 3900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/tec-07",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-tec-08",
+      "title": "Desk Mic Mini",
+      "description": "Desk Mic Mini by Quillon. Sample product for testing; not real inventory.",
+      "brand": "Quillon",
+      "category": "tech-accessories",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-tec-08/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-tec-08",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 6900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/tec-08",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-01",
+      "title": "Ceramic Vase Set",
+      "description": "Ceramic Vase Set by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-01/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-01",
+          "merchant": "Testbed Home",
+          "price": {
+            "minorUnits": 5400,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/hom-01",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-02",
+      "title": "Linen Throw",
+      "description": "Linen Throw by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-02/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-02",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 6900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/hom-02",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-03",
+      "title": "Arc Floor Lamp",
+      "description": "Arc Floor Lamp by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-03/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-03",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 18900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US"
+          ],
+          "url": "https://example.com/sample/hom-03",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-04",
+      "title": "Woven Wall Hanging",
+      "description": "Woven Wall Hanging by Lumenhaus. Sample product for testing; not real inventory.",
+      "brand": "Lumenhaus",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-04/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-04",
+          "merchant": "Testbed Home",
+          "price": {
+            "minorUnits": 4900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "GB"
+          ],
+          "url": "https://example.com/sample/hom-04",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-05",
+      "title": "Scented Candle Trio",
+      "description": "Scented Candle Trio by Saltmarsh. Sample product for testing; not real inventory.",
+      "brand": "Saltmarsh",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-05/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-05",
+          "merchant": "Sample Outfitters",
+          "price": {
+            "minorUnits": 3900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/hom-05",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-06",
+      "title": "Round Wall Mirror",
+      "description": "Round Wall Mirror by Brightmoor. Sample product for testing; not real inventory.",
+      "brand": "Brightmoor",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-06/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-06",
+          "merchant": "Fixture Goods Co",
+          "price": {
+            "minorUnits": 12900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/hom-06",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-07",
+      "title": "Terracotta Planter",
+      "description": "Terracotta Planter by Tidewell. Sample product for testing; not real inventory.",
+      "brand": "Tidewell",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-07/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-07",
+          "merchant": "Testbed Home",
+          "price": {
+            "minorUnits": 2900,
+            "currency": "GBP"
+          },
+          "shipsTo": [
+            "US",
+            "GB"
+          ],
+          "url": "https://example.com/sample/hom-07",
+          "monetisation": "affiliate",
+          "availability": "in_stock"
+        }
+      ]
+    },
+    {
+      "id": "fixture-hom-08",
+      "title": "Oak Side Table",
+      "description": "Oak Side Table by Halden. Sample product for testing; not real inventory.",
+      "brand": "Halden",
+      "category": "home-decor",
+      "attributes": {},
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-hom-08/800/1200"
+        }
+      ],
+      "offers": [
+        {
+          "id": "fixture-offer-hom-08",
+          "merchant": "Catalog Sample Store",
+          "price": {
+            "minorUnits": 21900,
+            "currency": "USD"
+          },
+          "shipsTo": [
+            "US",
+            "GB",
+            "AE",
+            "LB"
+          ],
+          "url": "https://example.com/sample/hom-08",
+          "monetisation": "none",
+          "availability": "in_stock"
+        }
+      ]
+    }
+  ],
+  "brandAds": [
+    {
+      "id": "fixture-brand-ad-northstar",
+      "brand": "Northstar",
+      "headline": "Lace up. The sample run club leaves at dawn.",
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-northstar-1/800/1200"
+        },
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-northstar-2/800/1200"
+        },
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-northstar-3/800/1200"
+        }
+      ],
+      "productIds": [
+        "fixture-snk-01",
+        "fixture-snk-04"
+      ]
+    },
+    {
+      "id": "fixture-brand-ad-orbitline",
+      "brand": "Orbitline",
+      "headline": "Pack light, charge fast, pretend this ad is real.",
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-orbitline-1/800/1200"
+        },
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-orbitline-2/800/1200"
+        }
+      ],
+      "productIds": [
+        "fixture-bag-01",
+        "fixture-bag-05",
+        "fixture-tec-01"
+      ]
+    },
+    {
+      "id": "fixture-brand-ad-brightmoor",
+      "brand": "Brightmoor",
+      "headline": "Your living room called. It wants better lighting.",
+      "media": [
+        {
+          "kind": "image",
+          "url": "https://picsum.photos/seed/stafeed-brand-ad-brightmoor-1/800/1200"
+        }
+      ],
+      "productIds": [
+        "fixture-hom-03",
+        "fixture-hom-06"
+      ]
+    }
+  ]
+}

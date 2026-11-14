@@ -14,12 +14,12 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #7 — 06 Product details, Merchant Handoff, Share, Report (2026-11-14, built by the orchestrator)
 - #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
 - #9 — 08 Events log, debug screen & ad counter (2026-11-14, built by the orchestrator)
+- #15 — 14 Backend first slice: schema, ad sources, config & feed (2026-11-14, built by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
-| #15 — 14 Backend first slice | Cloud agent |
 | #26 — 25 Research: pay-per-click networks | Cloud agent |
 | #14 — 13 Create Supabase project | You |
 | #24 — 23 Apply to Awin; launch country | You |
@@ -129,6 +129,22 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   - The debug screen is visible to everyone for now. Hide it before the first store release.
 - Choices made by the orchestrator: the Skip thresholds (fast under 1s, Skip under 2s, nothing after a 2s view); a calendar week from Monday for "this week"; a return to the Feed tab counting as a new impression; "1 ad" in the Profile line; the 5,000-Event cap; the debug screen's wording.
 
+## Backend first slice (#15)
+- **`supabase/`** beside the Flutter app (ADR-0001). TypeScript Edge Functions plus versioned migrations. Nothing is deployed: there's no Supabase project yet (#14).
+- **Migration** `supabase/migrations/20261114000000_catalog.sql` adds `brands`, `merchants`, `categories`, `products`, `offers` and `media_assets`. Prices are integer minor units plus an ISO currency code. Each Offer has its ships-to countries, a destination URL kept as given, availability and monetisation (`sponsored` / `affiliate` / `pay_per_click` / `none`). The prohibited categories (adult, weapons, tobacco, drugs, counterfeits, gambling, dangerous goods) are seeded with `prohibited = true`. `updated_at` is kept current by a trigger. Row level security is on for every table with no policies, so the anon key reads nothing directly; the functions read server-side. Shopper tables and their policies come with #17.
+- **Ad source interface** (spec Seam 2), in `supabase/functions/_shared/ad_source.ts`: each source declares its supported filters and its monetisation types, searches candidates (Products and Brand Ads) for a Destination Country, category and search, and fetches one Product fresh. Every source goes through `source_guard.ts`, which drops prohibited categories and Offers that don't ship to the Destination Country, whatever the source returned.
+- **Fixture source** (`fixture_source.ts`) serves a copy of the app's Fixtures (`_shared/fixtures/fixtures.json`: 56 Products, 3 Brand Ads, 5 categories) with the same rules as the app's Fixture gateway. **If you change the app's Fixtures, change that file too**: the Flutter test `test/features/feed/data/server_fixtures_test.dart` fails when the two differ.
+- **`GET /functions/v1/config`** (the spec's `/v1/config`) returns the API version, whether it serves sample data, the Destination Countries and currencies (the same lists as onboarding), the supported filters (categories across sources, prohibited ones never listed, plus free-text search) and the feed page size.
+- **`GET /functions/v1/feed?country=GB&category=bags&q=tote&cursor=…`** (the spec's `/v1/feed`) returns `{items, nextCursor, servesSampleData}`. It holds only Ads (ADR-0002): each Affiliate Ad shows one chosen Offer (the first in-stock one that earns), and each Brand Ad (labelled `AD`, Sponsored) links only to the Products that are in the feed there. Not an Ad never shows. Items come in source order, ready for ranking (#16). Cursors are opaque and only continue the same country, category and search. Clear 400 errors cover a missing or bad country, an unsupported category, a bad cursor and `sessionId` (Shopping Sessions come with #19). A failing source returns a JSON 500. CORS preflight is answered.
+- **Checks** (run in `supabase/`): `npm ci`, then `npm run typecheck` (tsc, strict), `npm run lint` (ESLint + typescript-eslint) and `npm test` (Vitest, 36 tests). The API tests call the real handlers with the Fixture source. The migration tests apply every migration to PGlite, an in-process Postgres, so no project, Docker or secret is needed: clean apply, tables with RLS on, prohibited categories, the whole Fixture catalog loading, constraints refusing bad Offers, cascading deletes, `updated_at`.
+- **New CI job `backend`** (`CI / backend (pull_request)`) runs those three checks on Node 20. **It isn't a required check yet**, so a red `backend` wouldn't stop auto-merge. The orchestrator doesn't edit branch protection; to make it required, add `{"context": "backend", "app_id": 15368}` with the existing checks (see "Main protection & auto-merge" below).
+- For you to know:
+  - The Shopper's country is a query parameter for now (no backend identity until #17). Prices aren't converted to the Shopper's currency.
+  - The feed is built in full for every page and paged by offset. That's fine for Fixtures, but it should move into the sources once real catalogs arrive (a catalog change between pages can repeat or skip an item).
+  - `npm audit` reports 7 moderate advisories, all in ESLint's dev-only dependencies. Nothing ships to the app or the functions.
+  - The function code uses `.ts` import paths and a JSON import, so the same files run on Deno (Supabase) and under Node (tests). It hasn't been run on Deno or deployed yet (no project, and Deno isn't installed on this PC).
+- Choices made by the orchestrator: Node 20 + Vitest + PGlite instead of Deno or local Supabase for the checks; offset-in-cursor paging like the app's Fixture gateway; the error codes; the shape of `/v1/config`; a JSON copy of the Fixtures guarded by a Flutter test, instead of one shared file (the app's Fixtures stay Dart, so no golden or app test changes).
+
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
 - Required checks on `main` (branch protection, #37): **`format, analyze, test`** and **`goldens`** (#35, required since 2026-11-13). The first is shown in the PR checks list as `CI / format, analyze, test (pull_request)`.
@@ -215,7 +231,8 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (268 passing, 6 golden tests skipped off Linux): passing on Windows as of #9.
+- `dart format`, `flutter analyze` (no issues), `flutter test` (269 passing, 6 golden tests skipped off Linux): passing on Windows as of #15.
+- Backend (`supabase/`): type check, lint, 36 tests passing as of #15.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
