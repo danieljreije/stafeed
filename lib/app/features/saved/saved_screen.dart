@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../router/app_router.dart';
+import '../product/open_product_details.dart';
 import 'models/saved_product.dart';
 import 'providers/saved_products_provider.dart';
 import 'save_action.dart';
@@ -85,8 +84,11 @@ class _SavedProductTile extends ConsumerWidget {
             Text(mark, style: TextStyle(color: theme.colorScheme.error)),
         ],
       ),
-      onTap: () => context.push(
-        AppRoutes.productDetails(saved.productId, offerId: saved.offerId),
+      onTap: () => openProductDetails(
+        context,
+        ref,
+        saved.productId,
+        offerId: saved.offerId,
       ),
       trailing: IconButton(
         tooltip: 'Remove from Saved',

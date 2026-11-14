@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../router/app_router.dart';
-
+import '../events/feed_watch.dart';
+import '../events/models/event.dart';
+import '../events/providers/events_provider.dart';
+import '../product/open_product_details.dart';
 import 'models/feed_filter.dart';
 import 'models/feed_item.dart';
 import 'models/feed_state.dart';
@@ -55,6 +58,9 @@ class FeedScreen extends ConsumerWidget {
                 ),
               ),
               FeedPhase.loaded => _FeedPages(
+                // A new filter is a new feed, watched from its first Feed
+                // Item.
+                key: ValueKey('${filter.category ?? 'all'}:${filter.query}'),
                 feedState: feedState,
                 filter: filter,
               ),
@@ -152,19 +158,107 @@ class _FeedMessage extends StatelessWidget {
 }
 
 /// The swipeable Feed Items, with pull-to-refresh, load-more and the
-/// end-of-feed page.
-class _FeedPages extends ConsumerWidget {
-  const _FeedPages({required this.feedState, required this.filter});
-
-  /// Roughly the height of the search box, chips and sample-data marker, so
-  /// the refresh spinner shows below them instead of behind them.
-  static const double _controlsHeight = 150;
+/// end-of-feed page. Records what the Shopper sees: impressions, 2s and 5s
+/// views and Skips (see [FeedWatch]).
+class _FeedPages extends ConsumerStatefulWidget {
+  const _FeedPages({super.key, required this.feedState, required this.filter});
 
   final FeedState feedState;
   final FeedFilter filter;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_FeedPages> createState() => _FeedPagesState();
+}
+
+class _FeedPagesState extends ConsumerState<_FeedPages> {
+  /// Roughly the height of the search box, chips and sample-data marker, so
+  /// the refresh spinner shows below them instead of behind them.
+  static const double _controlsHeight = 150;
+
+  // Kept from the start, so leaving the feed can still record its last
+  // Events after this widget is gone.
+  late final EventsLog _events = ref.read(eventsLogProvider.notifier);
+  late final DateTime Function() _now = ref.read(eventsClockProvider);
+  late final FeedWatch _watch = FeedWatch(
+    actedOn: (item, since) => actedOnFeedItem(_events.recorded, item, since),
+  );
+
+  int _index = 0;
+  Timer? _viewTimer;
+
+  /// False while the Feed tab is hidden behind another tab.
+  bool? _visible;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible == _visible) return;
+    _visible = visible;
+    if (visible) {
+      // Coming back to the Feed tab shows its Feed Item again.
+      _watchCurrent(swiped: false);
+    } else {
+      _viewTimer?.cancel();
+      _record(_watch.leave(_now(), swiped: false));
+    }
+  }
+
+  @override
+  void didUpdateWidget(_FeedPages oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A refresh can put a different Feed Item where the Shopper is.
+    if (_visible ?? false) _watchCurrent(swiped: false);
+  }
+
+  @override
+  void dispose() {
+    _viewTimer?.cancel();
+    _record(_watch.leave(_now(), swiped: false));
+    super.dispose();
+  }
+
+  /// Tells the watch what is on screen now. [swiped] says whether the
+  /// Shopper got here by swiping.
+  void _watchCurrent({required bool swiped}) {
+    final items = widget.feedState.items;
+    final now = _now();
+    if (_index < items.length) {
+      final item = items[_index];
+      if (_watch.current?.id == item.id) return;
+      if (!swiped) _record(_watch.leave(now, swiped: false));
+      _record(_watch.show(item, now));
+    } else {
+      _record(_watch.leave(now, swiped: swiped));
+    }
+    _scheduleViewCheck();
+  }
+
+  void _scheduleViewCheck() {
+    _viewTimer?.cancel();
+    final wait = _watch.untilNextCheck(_now());
+    if (wait == null) return;
+    _viewTimer = Timer(wait, () {
+      _record(_watch.check(_now()));
+      _scheduleViewCheck();
+    });
+  }
+
+  /// Records [events] just after the current frame, since they can come
+  /// up while the feed is being built.
+  void _record(List<NewEvent> events) {
+    if (events.isEmpty) return;
+    scheduleMicrotask(() {
+      for (final event in events) {
+        _events.record(event);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final feedState = widget.feedState;
+    final filter = widget.filter;
     final items = feedState.items;
 
     // The feed never waits for the Saved Products: until they are read, every
@@ -184,6 +278,9 @@ class _FeedPages extends ConsumerWidget {
               parent: ScrollConfiguration.of(context).getScrollPhysics(context),
             ),
             onPageChanged: (index) {
+              _index = index;
+              _watchCurrent(swiped: true);
+
               // Fetch ahead, a few Feed Items before the last one.
               if (index >= items.length - 3) {
                 ref.read(feedProvider.notifier).loadMore();
@@ -200,17 +297,22 @@ class _FeedPages extends ConsumerWidget {
                   isSaved: savedProductIds.contains(item.product.id),
                   onSaveToggle: () =>
                       toggleSaved(context, ref, item.product, item.offer),
-                  onOpen: () => context.push(
-                    AppRoutes.productDetails(
-                      item.product.id,
-                      offerId: item.offer.id,
-                    ),
+                  onOpen: () => openProductDetails(
+                    context,
+                    ref,
+                    item.product.id,
+                    offerId: item.offer.id,
+                    feedItemId: item.id,
                   ),
                 ),
                 final BrandAd ad => BrandAdCard(
                   ad: ad,
-                  onProductTap: (product) =>
-                      context.push(AppRoutes.productDetails(product.id)),
+                  onProductTap: (product) => openProductDetails(
+                    context,
+                    ref,
+                    product.id,
+                    feedItemId: ad.id,
+                  ),
                 ),
               };
             },
