@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app_name.dart';
 import 'router/app_router.dart';
+import 'stafeed_scroll_behavior.dart';
 
 class StafeedApp extends ConsumerWidget {
   const StafeedApp({super.key});
@@ -13,6 +14,7 @@ class StafeedApp extends ConsumerWidget {
       title: appName,
       routerConfig: ref.watch(appRouterProvider),
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const StafeedScrollBehavior(),
     );
   }
 }

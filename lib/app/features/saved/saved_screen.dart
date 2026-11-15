@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../feed/widgets/product_image.dart';
 import '../product/open_product_details.dart';
 import 'models/saved_product.dart';
 import 'providers/saved_products_provider.dart';
@@ -68,12 +69,7 @@ class _SavedProductTile extends ConsumerWidget {
         height: 60,
         child: imageUrl == null
             ? const Icon(Icons.image_not_supported_outlined)
-            : Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.broken_image_outlined),
-              ),
+            : ProductImage(imageUrl),
       ),
       title: Text(saved.title),
       subtitle: Column(
