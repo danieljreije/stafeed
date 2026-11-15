@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../events/models/event.dart';
 import '../../events/providers/events_provider.dart';
+import '../../shopping_sessions/providers/shopping_sessions_provider.dart';
 import '../models/feed_filter.dart';
 
 class FeedFilterNotifier extends Notifier<FeedFilter> {
@@ -39,4 +40,11 @@ class FeedFilterNotifier extends Notifier<FeedFilter> {
 
 final feedFilterProvider = NotifierProvider<FeedFilterNotifier, FeedFilter>(
   FeedFilterNotifier.new,
+);
+
+/// What the feed shows now: the active Shopping Session, or For You with
+/// its category or search.
+final currentFeedFilterProvider = Provider<FeedFilter>(
+  (ref) =>
+      ref.watch(activeSessionFilterProvider) ?? ref.watch(feedFilterProvider),
 );

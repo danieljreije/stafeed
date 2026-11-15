@@ -65,16 +65,26 @@ class FixtureDataGateway implements DataGateway {
 
   @override
   Future<SupportedFilters> getSupportedFilters() async {
+    final items = _sessionItems();
     final used = {
-      for (final item in _forYou())
+      for (final item in items)
         for (final product in item.products) product.category,
     };
+    final brands = {
+      for (final item in items)
+        switch (item) {
+          BrandAd(:final brand) => brand,
+          ProductFeedItem(:final product) => product.brand,
+        },
+    }.toList()..sort();
 
     return SupportedFilters(
       categories: [
         for (final category in _categories)
           if (used.contains(category.id)) category,
       ],
+      brands: brands,
+      supportsMaxPrice: true,
     );
   }
 
@@ -93,15 +103,27 @@ class FixtureDataGateway implements DataGateway {
         : _readCursor(cursor, fingerprint);
     final shopper = await (taste?.call() ?? Future.value(const ShopperTaste()));
 
-    final matches = _forYou().where((item) => _matches(item, filter)).toList();
+    final pool = filter.isSession ? _sessionItems() : _forYou();
+    final matches = pool.where((item) => _matches(item, filter)).toList();
     final byId = {for (final item in matches) item.id: item};
 
     final ranked = rank(
       RankingInput(
-        feed: RankedFeed.forYou,
+        feed: filter.isSession ? RankedFeed.session : RankedFeed.forYou,
         candidates: [for (final item in matches) _candidate(item)],
         interests: shopper.interests,
         longTermSignals: _signals(shopper.signals),
+        // A Shopping Session ranks by its goal and only its own taste;
+        // what happens in it never reaches For You.
+        session: filter.isSession
+            ? SessionGoal(
+                query: filter.query,
+                category: filter.category,
+                signals: _signals(
+                  shopper.sessionSignals[filter.sessionId] ?? const [],
+                ),
+              )
+            : null,
         recentlyShown: position.shown.toSet(),
         notInterested: {...shopper.notInterested, ..._notInterested},
         previousBrand: position.lastBrand,
@@ -285,6 +307,28 @@ class FixtureDataGateway implements DataGateway {
     return items;
   }
 
+  /// Every Feed Item a Shopping Session can show: For You's Ads, plus each
+  /// Product with no Ad Offer here but an available Offer that ships here,
+  /// as Not an Ad. The ranking puts Ads first; Not an Ad only fills gaps.
+  List<FeedItem> _sessionItems() {
+    final items = _forYou();
+    final asAds = {
+      for (final item in items)
+        if (item is AffiliateAd) item.product.id,
+    };
+
+    for (final product in _products) {
+      if (asAds.contains(product.id)) continue;
+      for (final offer in product.offers) {
+        if (!offer.isAffiliate && offer.isAvailable && _shipsHere(offer)) {
+          items.add(NotAnAd(product: product, offer: offer));
+          break;
+        }
+      }
+    }
+    return items;
+  }
+
   bool _shipsHere(Offer offer) =>
       destinationCountry == null || offer.shipsTo.contains(destinationCountry);
 
@@ -318,6 +362,32 @@ class FixtureDataGateway implements DataGateway {
   /// Product it links to.
   bool _matches(FeedItem item, FeedFilter filter) {
     final products = item.products;
+
+    if (filter.brand case final brand?) {
+      final itemBrand = switch (item) {
+        BrandAd(:final brand) => brand,
+        ProductFeedItem(:final product) => product.brand,
+      };
+      if (itemBrand != brand) return false;
+    }
+
+    if (filter.maxPrice case final budget?) {
+      final prices = switch (item) {
+        ProductFeedItem(:final offer) => [offer.price],
+        BrandAd() => [
+          for (final product in products)
+            if (_adOffer(product) case final offer?) offer.price,
+        ],
+      };
+      // Prices aren't converted yet: only an Offer in the budget's currency
+      // can be within it.
+      final withinBudget = prices.any(
+        (price) =>
+            price.currencyCode == budget.currencyCode &&
+            price.minorUnits <= budget.minorUnits,
+      );
+      if (!withinBudget) return false;
+    }
 
     if (filter.category != null &&
         !products.any((product) => product.category == filter.category)) {
@@ -357,10 +427,12 @@ class FixtureDataGateway implements DataGateway {
       .toList();
 
   /// A cursor only continues the feed it came from: same Destination
-  /// Country, category and search.
+  /// Country, category, search, Brand, budget and Shopping Session.
   String _fingerprint(FeedFilter filter) =>
       '${destinationCountry ?? ''}|${filter.category ?? ''}|'
-      '${_words(filter.query).join(' ')}';
+      '${_words(filter.query).join(' ')}|${filter.brand ?? ''}|'
+      '${filter.maxPrice?.minorUnits ?? ''}${filter.maxPrice?.currencyCode ?? ''}|'
+      '${filter.sessionId ?? ''}';
 
   static FeedCursor _writeCursor(_Position position, String fingerprint) {
     final payload = jsonEncode({

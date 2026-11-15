@@ -17,7 +17,12 @@ class ShopperTaste {
     this.interests = const {},
     this.notInterested = const {},
     this.signals = const [],
+    this.sessionSignals = const {},
   });
+
+  /// What the Shopper did inside each Shopping Session, by session ID,
+  /// oldest first. Only ever used for that session's own feed.
+  final Map<String, List<ProductSignal>> sessionSignals;
 
   /// Categories picked at onboarding.
   final Set<String> interests;
@@ -39,6 +44,20 @@ List<ProductSignal> longTermSignals(Iterable<Event> events) => [
         if (signalFor(event.type) case final type?)
           ProductSignal(type, productId),
 ];
+
+/// The taste signals in [events] that happened inside a Shopping Session,
+/// grouped by session ID. Never mixed into the long-term ones.
+Map<String, List<ProductSignal>> sessionSignals(Iterable<Event> events) {
+  final bySession = <String, List<ProductSignal>>{};
+  for (final event in events) {
+    final sessionId = event.sessionId;
+    final productId = event.productId;
+    final type = signalFor(event.type);
+    if (sessionId == null || productId == null || type == null) continue;
+    (bySession[sessionId] ??= []).add(ProductSignal(type, productId));
+  }
+  return bySession;
+}
 
 /// The taste signal an Event of [type] gives, if any.
 SignalType? signalFor(EventType type) => switch (type) {

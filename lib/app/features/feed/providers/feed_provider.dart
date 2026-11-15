@@ -37,7 +37,8 @@ class FeedNotifier extends Notifier<FeedState> {
   @override
   FeedState build() {
     _gateway = ref.watch(dataGatewayProvider);
-    _filter = ref.watch(feedFilterProvider);
+    // The active Shopping Session's feed, or For You with its own filter.
+    _filter = ref.watch(currentFeedFilterProvider);
 
     _loadFirstPage(++_generation);
 
