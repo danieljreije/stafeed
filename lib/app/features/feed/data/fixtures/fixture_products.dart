@@ -1,11 +1,12 @@
 // Fixtures: hand-made sample Products for offline development and tests.
 // They are NOT real commercial inventory. Brands, Merchants, prices and links
-// are invented; links point at example.com and images are random stock
-// photos from picsum.photos.
+// are invented; links point at example.com and pictures are sample
+// pictures drawn by the app (see sample_art.dart), never downloaded.
 
 import '../../models/money.dart';
 import '../../models/offer.dart';
 import '../../models/product.dart';
+import '../../models/sample_art.dart';
 import '../../models/supported_filters.dart';
 
 const fixtureCategories = [
@@ -50,7 +51,7 @@ Product _fixture(
     brand: brand,
     category: category,
     attributes: {'style': ?style},
-    imageUrls: ['https://picsum.photos/seed/stafeed-$id/800/1200'],
+    imageUrls: [sampleArtUrl(category, id)],
     offers: [
       Offer(
         id: 'fixture-offer-$id',

@@ -255,7 +255,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 
 ## Known gaps carried forward
 - The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
-- Fixture images load from picsum.photos, so cards show a placeholder when offline.
+- Fixture pictures are drawn by the app (`sample-art:` links), so the sample feed looks the same offline. Real sources still send real picture links.
 - Prices aren't converted to the Shopper's currency, and interests don't change the feed yet (see #6 above).
 
 ## Launch country

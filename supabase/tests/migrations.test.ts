@@ -49,7 +49,7 @@ async function loadFixtures(db: PGlite): Promise<void> {
     for (const [position, media] of p.media.entries()) {
       await db.query(
         `insert into media_assets (product_id, position, kind, url, source, rights)
-         values ($1, $2, $3, $4, 'fixtures', 'Sample image from picsum.photos')`,
+         values ($1, $2, $3, $4, 'fixtures', 'Sample picture drawn by the app')`,
         [p.id, position, media.kind, media.url],
       );
     }
@@ -126,6 +126,24 @@ describe('migrations', () => {
       "select ships_to, price_minor from offers where id = 'fixture-offer-snk-02'",
     );
     expect(rows[0]).toEqual({ ships_to: ['US', 'GB'], price_minor: 14500 });
+  });
+
+  it('allow sample-art pictures only for Fixture media', async () => {
+    await loadFixtures(db);
+    const insert = (source: string, url: string) =>
+      db.query(
+        `insert into media_assets (product_id, position, kind, url, source, rights)
+         values ('fixture-snk-01', 9, 'image', $1, $2, 'test')`,
+        [url, source],
+      );
+
+    await expect(insert('awin', 'sample-art:sneakers/snk-01')).rejects.toThrow(
+      /media_assets_url_check/,
+    );
+    await expect(insert('fixtures', 'ftp://example.com/x.jpg')).rejects.toThrow(
+      /media_assets_url_check/,
+    );
+    await insert('awin', 'https://example.com/x.jpg');
   });
 
   it('refuse Offers that would break the domain rules', async () => {
