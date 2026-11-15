@@ -1,0 +1,25 @@
+{
+  "score_weights": {
+    "source_relevance": 0.40,
+    "intent_match": 0.20,
+    "session_affinity": 0.15,
+    "long_term_affinity": 0.10,
+    "quality": 0.05,
+    "freshness": 0.05
+  },
+  "signal_weights": {
+    "not_interested": -5,
+    "fast_skip": -2,
+    "skip": -1,
+    "view_2s": 0.5,
+    "view_5s": 1,
+    "details": 2,
+    "share": 3,
+    "save": 4,
+    "outbound_click": 5
+  },
+  "affinity_saturation": 5,
+  "paid_ad_near_tie_bonus": 0.02,
+  "exploration_share": 0.05,
+  "price_band_edges_minor": [5000, 15000, 30000]
+}

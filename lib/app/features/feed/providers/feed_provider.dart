@@ -51,7 +51,10 @@ class FeedNotifier extends Notifier<FeedState> {
       final page = await _gateway.getFeedPage(filter: _filter);
       if (!_isCurrent(generation)) return;
 
-      state = FeedState.loaded(items: page.items, nextCursor: page.nextCursor);
+      state = FeedState.loaded(
+        items: _withoutHidden(page.items),
+        nextCursor: page.nextCursor,
+      );
     } catch (error) {
       if (!_isCurrent(generation)) return;
 
@@ -132,7 +135,10 @@ class FeedNotifier extends Notifier<FeedState> {
 
       // A new list: whatever the old one was still waiting for is stale.
       _generation++;
-      state = FeedState.loaded(items: page.items, nextCursor: page.nextCursor);
+      state = FeedState.loaded(
+        items: _withoutHidden(page.items),
+        nextCursor: page.nextCursor,
+      );
       return RefreshOutcome.refreshed;
     } catch (_) {
       if (!_isCurrent(generation)) return RefreshOutcome.skipped;
@@ -148,16 +154,69 @@ class FeedNotifier extends Notifier<FeedState> {
     }
   }
 
+  /// Takes the Product the Shopper marked Not interested out of the Feed
+  /// Items already loaded, and out of any page still on its way. The rest
+  /// stay where they are; the pages still to come are ranked with it.
+  void hideProduct(String productId) {
+    _hidden.add(productId);
+    final current = state;
+    if (!current.isLoaded) return;
+
+    state = FeedState.loaded(
+      items: _withoutHidden(current.items),
+      nextCursor: current.nextCursor,
+      isLoadingMore: current.isLoadingMore,
+      loadMoreError: current.loadMoreError,
+      isRefreshing: current.isRefreshing,
+    );
+
+    // Load-more only starts from a swipe; hiding may leave few or no Feed
+    // Items to swipe to.
+    if (state.items.length <= 3) loadMore();
+  }
+
+  /// Product IDs hidden while this feed is open.
+  final Set<String> _hidden = {};
+
+  /// [items] without the hidden Products: their Feed Items go, and a Brand
+  /// Ad loses them from its chips (and goes when none is left).
+  List<FeedItem> _withoutHidden(List<FeedItem> items) {
+    if (_hidden.isEmpty) return items;
+    return [
+      for (final item in items)
+        switch (item) {
+          ProductFeedItem(:final product) when _hidden.contains(product.id) =>
+            null,
+          BrandAd(:final products)
+              when products.any((p) => _hidden.contains(p.id)) =>
+            _trimmed(item),
+          _ => item,
+        },
+    ].nonNulls.toList();
+  }
+
+  BrandAd? _trimmed(BrandAd ad) {
+    final kept = [
+      for (final product in ad.products)
+        if (!_hidden.contains(product.id)) product,
+    ];
+    if (kept.isEmpty) return null;
+    return BrandAd(
+      id: ad.id,
+      brand: ad.brand,
+      headline: ad.headline,
+      media: ad.media,
+      products: kept,
+    );
+  }
+
   /// [existing] followed by the Feed Items in [incoming] not already shown.
-  static List<FeedItem> _append(
-    List<FeedItem> existing,
-    List<FeedItem> incoming,
-  ) {
+  List<FeedItem> _append(List<FeedItem> existing, List<FeedItem> incoming) {
     final seen = {for (final item in existing) item.id};
 
     return [
       ...existing,
-      for (final item in incoming)
+      for (final item in _withoutHidden(incoming))
         if (seen.add(item.id)) item,
     ];
   }

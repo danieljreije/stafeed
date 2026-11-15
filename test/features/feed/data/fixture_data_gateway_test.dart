@@ -186,14 +186,24 @@ void main() {
       }
     });
 
-    test('each comes right after the last of its linked Products', () async {
+    test('each comes right after the last of its linked Products, or one '
+        'later when that Product is by its own Brand', () async {
       final items = await readWholeFeed(gateway);
 
       for (final ad in items.whereType<BrandAd>()) {
-        final before = items[items.indexOf(ad) - 1];
+        final index = items.indexOf(ad);
+        final lastLinked = ad.products.last;
+        // Never the same Brand twice in a row.
+        final gap = lastLinked.brand == ad.brand ? 2 : 1;
+        final before = items[index - gap];
 
         expect(before, isA<AffiliateAd>(), reason: ad.id);
-        expect(before.id, ad.products.last.id, reason: ad.id);
+        expect(before.id, lastLinked.id, reason: ad.id);
+        expect(
+          (items[index - 1] as AffiliateAd).product.brand,
+          isNot(ad.brand),
+          reason: ad.id,
+        );
       }
     });
 
@@ -457,9 +467,11 @@ void main() {
                 product.id,
           ];
 
+          // In any order: the ranking moves a Feed Item down when it would
+          // follow its own Brand (#10).
           expect(
             items.whereType<AffiliateAd>().map((i) => i.product.id),
-            expected,
+            unorderedEquals(expected),
             reason: country,
           );
           // The Fixtures really do differ by country, so this proves something.

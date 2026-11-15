@@ -194,6 +194,10 @@ class _FakeGateway implements DataGateway {
   @override
   Future<void> submitReport(ProductReport report) =>
       _fixtures.submitReport(report);
+
+  @override
+  Future<void> markNotInterested(String productId) =>
+      _fixtures.markNotInterested(productId);
 }
 
 /// Tests draw text with a blocky placeholder font by default. Load real
