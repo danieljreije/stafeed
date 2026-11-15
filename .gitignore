@@ -49,3 +49,7 @@ app.*.map.json
 
 # Golden test mismatch images (before/after/diff), never committed
 **/failures/
+
+# Backend (supabase/) Node tooling
+supabase/node_modules/
+supabase/.temp/

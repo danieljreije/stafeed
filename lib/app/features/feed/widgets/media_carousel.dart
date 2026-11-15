@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/media.dart';
+import 'product_image.dart';
 
 /// A Feed Item's pictures, filling the card. Several are swiped through
 /// sideways, with dots showing the place. Video isn't played yet: its poster
@@ -82,18 +83,7 @@ class _MediaView extends StatelessWidget {
 
     if (url == null) return const _Placeholder(Icons.videocam_outlined);
 
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return const _Placeholder(Icons.broken_image_outlined);
-      },
-    );
+    return ProductImage(url);
   }
 }
 

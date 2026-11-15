@@ -116,3 +116,36 @@ jobs:
           --target=integration_test/shopper_journey_test.dart
           -d web-server --browser-name=chrome
           --browser-dimension=430x932 --headless
+
+  # Backend check (ticket #15): the Supabase migrations and Edge Functions
+  # under supabase/. Type check, lint and tests (API tests call the real
+  # handlers with the Fixture source; migrations apply to an in-process
+  # Postgres), so no Supabase project or secret is needed.
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: supabase
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: supabase/package-lock.json
+
+      - run: npm ci
+
+      - name: type check
+        run: npm run typecheck
+
+      - name: lint
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: test
+        if: ${{ !cancelled() }}
+        run: npm test

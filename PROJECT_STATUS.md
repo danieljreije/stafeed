@@ -15,13 +15,13 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #8 — 07 Saved Products independent of the feed (2026-11-14, built by the orchestrator)
 - #9 — 08 Events log, debug screen & ad counter (2026-11-14, built by the orchestrator)
 - #10 — 09 Ranking + Not interested (2026-11-14, built by the orchestrator)
+- #15 — 14 Backend first slice: schema, ad sources, config & feed (2026-11-14, built by the orchestrator)
+- #26 — 25 Research: pay-per-click shopping networks (2026-11-14, by the orchestrator)
 
 ## Start now (no blockers)
 | Ticket | Who |
 |---|---|
 | #5 — 04 Video-feed prototype | Local agent (Flutter) + real Android phone |
-| #15 — 14 Backend first slice | Cloud agent |
-| #26 — 25 Research: pay-per-click networks | Cloud agent |
 | #14 — 13 Create Supabase project | You |
 | #24 — 23 Apply to Awin; launch country | You |
 | #27 — 26 Apply for Shopify Catalog access | You |
@@ -154,6 +154,39 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   - Shopping Sessions (#11) will call the same ranking with the session's goal and signals; nothing in the app uses the session part yet.
   - "Already shown" means already shown in this feed: a refresh or a new filter starts again from the top, ranked with the latest taste.
 - Choices made by the orchestrator: exploration as every 20th Feed Item rather than a score bonus (a bonus made one save rank similar Products lower); affinities squashed as `a / (|a| + 5)`; a 0.02 near-tie bonus for paid Ads; price band edges; equal relevance for every Fixture; the "Nope" label and block icon; the wording of the two messages.
+## Backend first slice (#15)
+- **`supabase/`** beside the Flutter app (ADR-0001). TypeScript Edge Functions plus versioned migrations. Nothing is deployed: there's no Supabase project yet (#14).
+- **Migration** `supabase/migrations/20261114000000_catalog.sql` adds `brands`, `merchants`, `categories`, `products`, `offers` and `media_assets`. Prices are integer minor units plus an ISO currency code. Each Offer has its ships-to countries, a destination URL kept as given, availability and monetisation (`sponsored` / `affiliate` / `pay_per_click` / `none`). The prohibited categories (adult, weapons, tobacco, drugs, counterfeits, gambling, dangerous goods) are seeded with `prohibited = true`. `updated_at` is kept current by a trigger. Row level security is on for every table with no policies, so the anon key reads nothing directly; the functions read server-side. Shopper tables and their policies come with #17.
+- **Ad source interface** (spec Seam 2), in `supabase/functions/_shared/ad_source.ts`: each source declares its supported filters and its monetisation types, searches candidates (Products and Brand Ads) for a Destination Country, category and search, and fetches one Product fresh. Every source goes through `source_guard.ts`, which drops prohibited categories and Offers that don't ship to the Destination Country, whatever the source returned.
+- **Fixture source** (`fixture_source.ts`) serves a copy of the app's Fixtures (`_shared/fixtures/fixtures.json`: 56 Products, 3 Brand Ads, 5 categories) with the same rules as the app's Fixture gateway. **If you change the app's Fixtures, change that file too**: the Flutter test `test/features/feed/data/server_fixtures_test.dart` fails when the two differ.
+- **`GET /functions/v1/config`** (the spec's `/v1/config`) returns the API version, whether it serves sample data, the Destination Countries and currencies (the same lists as onboarding), the supported filters (categories across sources, prohibited ones never listed, plus free-text search) and the feed page size.
+- **`GET /functions/v1/feed?country=GB&category=bags&q=tote&cursor=…`** (the spec's `/v1/feed`) returns `{items, nextCursor, servesSampleData}`. It holds only Ads (ADR-0002): each Affiliate Ad shows one chosen Offer (the first in-stock one that earns), and each Brand Ad (labelled `AD`, Sponsored) links only to the Products that are in the feed there. Not an Ad never shows. Items come in source order, ready for ranking (#16). Cursors are opaque and only continue the same country, category and search. Clear 400 errors cover a missing or bad country, an unsupported category, a bad cursor and `sessionId` (Shopping Sessions come with #19). A failing source returns a JSON 500. CORS preflight is answered.
+- **Checks** (run in `supabase/`): `npm ci`, then `npm run typecheck` (tsc, strict), `npm run lint` (ESLint + typescript-eslint) and `npm test` (Vitest, 36 tests). The API tests call the real handlers with the Fixture source. The migration tests apply every migration to PGlite, an in-process Postgres, so no project, Docker or secret is needed: clean apply, tables with RLS on, prohibited categories, the whole Fixture catalog loading, constraints refusing bad Offers, cascading deletes, `updated_at`.
+- **New CI job `backend`** (`CI / backend (pull_request)`) runs those three checks on Node 20. **It isn't a required check yet**, so a red `backend` wouldn't stop auto-merge. The orchestrator doesn't edit branch protection; to make it required, add `{"context": "backend", "app_id": 15368}` with the existing checks (see "Main protection & auto-merge" below).
+- For you to know:
+  - The Shopper's country is a query parameter for now (no backend identity until #17). Prices aren't converted to the Shopper's currency.
+  - The feed is built in full for every page and paged by offset. That's fine for Fixtures, but it should move into the sources once real catalogs arrive (a catalog change between pages can repeat or skip an item).
+  - `npm audit` reports 7 moderate advisories, all in ESLint's dev-only dependencies. Nothing ships to the app or the functions.
+  - The function code uses `.ts` import paths and a JSON import, so the same files run on Deno (Supabase) and under Node (tests). It hasn't been run on Deno or deployed yet (no project, and Deno isn't installed on this PC).
+- Choices made by the orchestrator: Node 20 + Vitest + PGlite instead of Deno or local Supabase for the checks; offset-in-cursor paging like the app's Fixture gateway; the error codes; the shape of `/v1/config`; a JSON copy of the Fixtures guarded by a Flutter test, instead of one shared file (the app's Fixtures stay Dart, so no golden or app test changes).
+
+## Pay-per-click shopping networks research (#26)
+- File: `docs/research/ppc-shopping-networks.md`. Every claim links to its source (all read 2026-11-14). Secondary sources and search-engine summaries are marked as such.
+- **Recommendation:**
+  1. **Kelkoo Group first, for the US and UK.** A live pay-per-click network with a server-side offer search API: free text, category and price filters, and Offers with price, currency, availability, image, Merchant and a click link (`goUrl`).
+  2. **Connexity (a Taboola company) second, US only.** Its terms accept apps.
+  3. **Sovrn Commerce optional.** It has no keyword search, so it suits wrapping outbound links better than serving as an Ad source.
+- **UAE and Lebanon: no pay-per-click shopping network covers them.** Middle East networks (ArabClicks, Admitad, Boostiny) pay per sale or per coupon, with no product search API found. Nothing targets Lebanon. Ads there have to come from Brand Ads and affiliate programmes.
+- What it means for an adapter later:
+  - Kelkoo's `goUrl`s must not be cached, and the Merchant Handoff must open them in a visible browser on the Shopper's device, never as a call in the background. So a fresh fetch at tap time is needed.
+  - Neither Kelkoo nor Connexity gives ships-to countries. Each Offer belongs to one market country.
+  - Connexity needs a credit to Connexity wherever its Offers show, and a refresh every 6 hours.
+- **For you to do (only if you want pay-per-click Ads):**
+  - Sign up as a Kelkoo publisher. Before building anything, ask your account manager the open questions in the file: do they accept a native app; is an in-app browser tab allowed for the click; what goes in `originReferer`; does a feed made only of Ads count as a forbidden traffic type.
+  - Kelkoo pays against a monthly invoice from you, so you need an entity that can send one.
+  - Connexity's public terms are from 2013: ask them for the current ones.
+- Not confirmed: whether Kelkoo accepts apps, and Connexity's API details (its help centre blocked automated reading). No code changed. The checks ran unchanged: format, analyze, 269 tests passing.
+- Choice made by the orchestrator: the file sits in a new `docs/research/` folder, because the repo had no place for research notes yet.
 
 ## CI gate (#32)
 - Workflow: `.github/workflows/ci.yml` (`CI`), runs on every PR to `main` on `ubuntu-latest`, Flutter pinned to 3.47.2 stable.
@@ -242,12 +275,13 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: a local trial run against the real tracker printed the right merges, failed runs, hand-backs and next ticket (#4) and posted nothing. Not proven before merge: the workflow itself on GitHub (a new workflow can only be started once it is on `main`); see #43 for the first run.
 
 ## Verification
-- `dart format`, `flutter analyze` (no issues), `flutter test` (302 passing, 6 golden tests skipped off Linux): passing on Windows as of #10.
+- `dart format`, `flutter analyze` (no issues), `flutter test`: passing on Windows as of #10 merged with #15, #26 and the sample-pictures fix (#71).
+- Backend (`supabase/`): type check, lint, 37 tests passing as of #71.
 - Android: built and tested every night by the Nightly Android check (#39).
 
 ## Known gaps carried forward
 - The Save button on a Feed Item sits under the search bar (visible in `test/goldens/goldens/feed_item_affiliate_ad.png`).
-- Fixture images load from picsum.photos, so cards show a placeholder when offline.
+- Fixture pictures are drawn by the app (`sample-art:` links), so the sample feed looks the same offline. Real sources still send real picture links.
 - Prices aren't converted to the Shopper's currency (see #6 above).
 
 ## Launch country

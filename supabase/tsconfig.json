@@ -1,0 +1,24 @@
+{
+  // Type check only (`npm run typecheck`). Edge Functions run on Deno, which
+  // reads the .ts files directly; the same files run under Node in tests.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["functions/**/*.ts", "tests/**/*.ts", "types/**/*.d.ts", "*.ts"]
+}
