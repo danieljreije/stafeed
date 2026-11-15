@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../events/models/event.dart';
 import '../../events/providers/events_provider.dart';
 import '../../not_interested/providers/not_interested_provider.dart';
 import '../../ranking/shopper_taste.dart';
@@ -44,10 +45,12 @@ Future<ShopperTaste> readShopperTaste(Ref ref) async {
     }
   }
 
+  final recorded = await orElse(events, const <Event>[]);
   return ShopperTaste(
     interests: (await orElse(config, null))?.interests ?? const {},
     notInterested: await orElse(notInterested, const <String>{}),
-    signals: longTermSignals(await orElse(events, const [])),
+    signals: longTermSignals(recorded),
+    sessionSignals: sessionSignals(recorded),
   );
 }
 

@@ -17,6 +17,8 @@ import 'providers/feed_filter_provider.dart';
 import 'providers/feed_provider.dart';
 import '../saved/providers/saved_products_provider.dart';
 import '../saved/save_action.dart';
+import '../shopping_sessions/providers/shopping_sessions_provider.dart';
+import '../shopping_sessions/widgets/session_banner.dart';
 import 'widgets/brand_ad_card.dart';
 import 'widgets/feed_search_field.dart';
 import 'widgets/product_card.dart';
@@ -29,6 +31,8 @@ class FeedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feedState = ref.watch(feedProvider);
     final filter = ref.watch(feedFilterProvider);
+    final shown = ref.watch(currentFeedFilterProvider);
+    final session = ref.watch(activeShoppingSessionProvider);
     final categories =
         ref.watch(supportedFiltersProvider).asData?.value.categories ??
         const <ProductCategory>[];
@@ -50,6 +54,8 @@ class FeedScreen extends ConsumerWidget {
                   child: const Text('Retry'),
                 ),
               ),
+              FeedPhase.loaded when feedState.isEmpty && session != null =>
+                SessionNoResults(session: session),
               FeedPhase.loaded when feedState.isEmpty => _FeedMessage(
                 message: 'No matches',
                 action: TextButton(
@@ -61,9 +67,9 @@ class FeedScreen extends ConsumerWidget {
               FeedPhase.loaded => _FeedPages(
                 // A new filter is a new feed, watched from its first Feed
                 // Item.
-                key: ValueKey('${filter.category ?? 'all'}:${filter.query}'),
+                key: ValueKey(shown),
                 feedState: feedState,
-                filter: filter,
+                filter: shown,
               ),
             },
           ),
@@ -82,25 +88,31 @@ class FeedScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FeedSearchField(),
+                    // Inside a Shopping Session its banner takes the place
+                    // of For You's search and chips.
+                    if (session != null)
+                      SessionBanner(session: session)
+                    else ...[
+                      const FeedSearchField(),
 
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 50,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _categoryChip(ref, filter, 'All', null),
-                          for (final category in categories)
-                            _categoryChip(
-                              ref,
-                              filter,
-                              category.label,
-                              category.id,
-                            ),
-                        ],
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 50,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _categoryChip(ref, filter, 'All', null),
+                            for (final category in categories)
+                              _categoryChip(
+                                ref,
+                                filter,
+                                category.label,
+                                category.id,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                     if (servesSampleData)
                       const Align(
                         alignment: Alignment.centerLeft,
@@ -272,7 +284,7 @@ class _FeedPagesState extends ConsumerState<_FeedPages> {
           edgeOffset: MediaQuery.paddingOf(context).top + _controlsHeight,
           onRefresh: () => _refresh(context, ref),
           child: PageView.builder(
-            key: ValueKey('${filter.category ?? 'all'}:${filter.query}'),
+            key: ValueKey(filter),
             scrollDirection: Axis.vertical,
             // A feed of one Feed Item can still be pulled to refresh.
             physics: AlwaysScrollableScrollPhysics(

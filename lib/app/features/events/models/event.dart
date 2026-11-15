@@ -59,8 +59,8 @@ class NewEvent {
   final String? productId;
   final String? offerId;
 
-  /// The Shopping Session it happened in. Always null until Shopping
-  /// Sessions exist (#11).
+  /// The Shopping Session it happened in. Left null, the Events log fills
+  /// in the active session, if any.
   final String? sessionId;
 
   /// For Events about a Feed Item: whether that Feed Item is an Ad.
@@ -89,17 +89,22 @@ class Event {
     this.details = const {},
   });
 
-  /// [event] as it happened at [occurredAt], under [id].
-  Event.from(NewEvent event, {required this.id, required DateTime occurredAt})
-    : type = event.type,
-      occurredAt = occurredAt.toUtc(),
-      feedItemId = event.feedItemId,
-      productId = event.productId,
-      offerId = event.offerId,
-      sessionId = event.sessionId,
-      isAd = event.isAd,
-      dwell = event.dwell,
-      details = event.details;
+  /// [event] as it happened at [occurredAt], under [id], inside
+  /// [activeSessionId] unless the event names its own session.
+  Event.from(
+    NewEvent event, {
+    required this.id,
+    required DateTime occurredAt,
+    String? activeSessionId,
+  }) : type = event.type,
+       occurredAt = occurredAt.toUtc(),
+       feedItemId = event.feedItemId,
+       productId = event.productId,
+       offerId = event.offerId,
+       sessionId = event.sessionId ?? activeSessionId,
+       isAd = event.isAd,
+       dwell = event.dwell,
+       details = event.details;
 
   /// Unique across every Event, so the backend can drop a duplicate.
   final String id;

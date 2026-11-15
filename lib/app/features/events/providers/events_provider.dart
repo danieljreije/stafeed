@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../shopping_sessions/providers/shopping_sessions_provider.dart';
 import '../data/events_storage.dart';
 import '../models/event.dart';
 
@@ -61,6 +62,9 @@ class EventsLog extends AsyncNotifier<List<Event>> {
       event,
       id: ref.read(eventIdsProvider)(),
       occurredAt: ref.read(eventsClockProvider)(),
+      // What the Shopper does while a Shopping Session is active belongs to
+      // that session's taste, never to For You's.
+      activeSessionId: ref.read(activeShoppingSessionProvider)?.id,
     );
     final storage = ref.read(eventsStorageProvider);
 

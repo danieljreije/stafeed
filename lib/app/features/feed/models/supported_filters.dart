@@ -9,7 +9,18 @@ class ProductCategory {
 /// The filters a data source actually supports, so the app only offers
 /// real ones.
 class SupportedFilters {
-  const SupportedFilters({required this.categories});
+  const SupportedFilters({
+    required this.categories,
+    this.brands = const [],
+    this.supportsMaxPrice = false,
+  });
 
   final List<ProductCategory> categories;
+
+  /// Brands a Shopping Session can be narrowed to. Empty when the source
+  /// can't filter by Brand.
+  final List<String> brands;
+
+  /// Whether a Shopping Session can set a budget.
+  final bool supportsMaxPrice;
 }

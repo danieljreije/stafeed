@@ -17,6 +17,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #10 — 09 Ranking + Not interested (2026-11-14, built by the orchestrator)
 - #15 — 14 Backend first slice: schema, ad sources, config & feed (2026-11-14, built by the orchestrator)
 - #26 — 25 Research: pay-per-click shopping networks (2026-11-14, by the orchestrator)
+- #11 — 10 Shopping Sessions (2026-11-15)
 
 ## Start now (no blockers)
 | Ticket | Who |
@@ -154,6 +155,17 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   - Shopping Sessions (#11) will call the same ranking with the session's goal and signals; nothing in the app uses the session part yet.
   - "Already shown" means already shown in this feed: a refresh or a new filter starts again from the top, ranked with the latest taste.
 - Choices made by the orchestrator: exploration as every 20th Feed Item rather than a score bonus (a bonus made one save rank similar Products lower); affinities squashed as `a / (|a| + 5)`; a 0.02 near-tie bonus for paid Ads; price band edges; equal relevance for every Fixture; the "Nope" label and block icon; the wording of the two messages.
+## Shopping Sessions (#11)
+- **Search tab** lists the Shopping Sessions (newest first) with **New session**. The form takes a goal, an optional name, and only the filters the source supports (`SupportedFilters.brands`, `supportsMaxPrice`, categories): budget, Brand, category. While the Shopper types it shows how many Feed Items match, looked up once typing pauses for 400 ms.
+- **Starting or resuming** a session switches the Feed tab to it. A banner "Session: (name)" replaces For You's search and chips; its ✕ ("Back to For You") ends the session. A quick search or a category from the Search tab also goes back to For You.
+- Each session's menu: **Edit** (filters), **Rename**, **Reset** (same name and filters, a fresh taste: the session gets a new ID), **Delete** (deleting the active one goes back to For You). Many are kept, one is active. All of it is stored on the device (`shopping_sessions` key) and survives a restart.
+- **Taste stays apart:** while a session is active, the Events log tags every Event with its session ID. For You's ranking only reads Events with no session; a session's feed ranks by its goal and only its own Events (`sessionSignals`).
+- **Feed:** the session feed is its own `FeedFilter` (`sessionId`, goal, category, Brand, budget). Changing a filter starts a new feed generation, so a late page from the old filters is dropped. Renaming doesn't reload the feed.
+- **Not an Ad** fill-ins (Products that earn nothing) only appear inside sessions, after the Ads they compete with. For You never shows them.
+- **No results:** the session's empty state suggests fixes: raise the budget by half, any Brand, any category, or drop the goal words.
+- Budget compares prices in the budget's currency only (prices aren't converted yet), so an Offer in another currency never counts as within budget.
+- Tests: `test/features/shopping_sessions/` (session feed, provider and storage, whole-app flows).
+
 ## Backend first slice (#15)
 - **`supabase/`** beside the Flutter app (ADR-0001). TypeScript Edge Functions plus versioned migrations. Nothing is deployed: there's no Supabase project yet (#14).
 - **Migration** `supabase/migrations/20261114000000_catalog.sql` adds `brands`, `merchants`, `categories`, `products`, `offers` and `media_assets`. Prices are integer minor units plus an ISO currency code. Each Offer has its ships-to countries, a destination URL kept as given, availability and monetisation (`sponsored` / `affiliate` / `pay_per_click` / `none`). The prohibited categories (adult, weapons, tobacco, drugs, counterfeits, gambling, dangerous goods) are seeded with `prohibited = true`. `updated_at` is kept current by a trigger. Row level security is on for every table with no policies, so the anon key reads nothing directly; the functions read server-side. Shopper tables and their policies come with #17.
@@ -239,6 +251,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - Proven 2026-11-13: its first run (from this ticket's branch) found a real Android-only problem. The test tapped "Saved Products" while Android was still sliding the page in, so the tap missed. The run opened [#55](https://github.com/danieljreije/stafeed/issues/55) correctly ([run](https://github.com/danieljreije/stafeed/actions/runs/43331392758)). The test now waits until a button is fully on screen and still before tapping it, and passes on Android ([run](https://github.com/danieljreije/stafeed/actions/runs/43435394818)). The manual passing run and the forced-failure run on `main` are linked in [#39](https://github.com/danieljreije/stafeed/issues/39).
 
 ## Orchestrator (#38 dry run, #41 live)
+- **Removed 2026-11-15** at the owner's request: the `stafeed-orchestrator` scheduled task is deleted and no longer runs. Work now happens in direct sessions with the owner. The run prompt stays in `docs/agents/` for reference. The notes below describe how it worked.
 - Run prompt: `docs/agents/orchestrator-run.md`, with a `DRY_RUN` switch (missing switch = dry run). Picks the first ticket in spec order (#31's sub-issues, then #1's) that is open, `ready-for-agent`, unassigned, has no open blockers and no PR; claims it, builds it test-first in a worktree off `main` (under `.claude/worktrees/`), opens a PR with `PROJECT_STATUS.md` updated, turns on auto-merge and follows CI. It never weakens, skips or deletes a test to get green.
 - Give-up path: after two red attempts, any permission block, or a ticket that can't be done as written, it comments on the ticket (`Stafeed orchestrator gave up: ...`), unassigns itself, swaps `ready-for-agent` for `ready-for-human`, sends you a push notification and stops. The next run skips that ticket and takes the next one.
 - Scheduled task: `stafeed-orchestrator` (Claude desktop app, on this PC), prompt in `docs/agents/orchestrator-scheduled-task.md`. Auto mode, never bypass-permissions; `.claude/settings.json` allows `flutter`, `dart`, `git`, `gh`. It only runs while the PC is on and the Claude app is open.
