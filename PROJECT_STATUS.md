@@ -1,6 +1,6 @@
 # Stafeed — Project Status
 
-_Last updated: 2026-11-14_ · "Stafeed" is a working name.
+_Last updated: 2026-11-17_ · "Stafeed" is a working name.
 
 - Spec: [#1](https://github.com/danieljreije/stafeed/issues/1) — tickets are its sub-issues (#2–#30), with native "blocked by" links
 - Glossary: `CONTEXT.md` · Decisions: `docs/adr/` · Background vision: `docs/STAFEED_PRODUCT_SPEC.md`
@@ -18,6 +18,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - #15 — 14 Backend first slice: schema, ad sources, config & feed (2026-11-14, built by the orchestrator)
 - #26 — 25 Research: pay-per-click shopping networks (2026-11-14, by the orchestrator)
 - #11 — 10 Shopping Sessions (2026-11-15)
+- #16 — 15 Ranking in TypeScript (shared scenarios) (2026-11-17)
 
 ## Start now (no blockers)
 | Ticket | Who |
@@ -172,7 +173,7 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
 - **Ad source interface** (spec Seam 2), in `supabase/functions/_shared/ad_source.ts`: each source declares its supported filters and its monetisation types, searches candidates (Products and Brand Ads) for a Destination Country, category and search, and fetches one Product fresh. Every source goes through `source_guard.ts`, which drops prohibited categories and Offers that don't ship to the Destination Country, whatever the source returned.
 - **Fixture source** (`fixture_source.ts`) serves a copy of the app's Fixtures (`_shared/fixtures/fixtures.json`: 56 Products, 3 Brand Ads, 5 categories) with the same rules as the app's Fixture gateway. **If you change the app's Fixtures, change that file too**: the Flutter test `test/features/feed/data/server_fixtures_test.dart` fails when the two differ.
 - **`GET /functions/v1/config`** (the spec's `/v1/config`) returns the API version, whether it serves sample data, the Destination Countries and currencies (the same lists as onboarding), the supported filters (categories across sources, prohibited ones never listed, plus free-text search) and the feed page size.
-- **`GET /functions/v1/feed?country=GB&category=bags&q=tote&cursor=…`** (the spec's `/v1/feed`) returns `{items, nextCursor, servesSampleData}`. It holds only Ads (ADR-0002): each Affiliate Ad shows one chosen Offer (the first in-stock one that earns), and each Brand Ad (labelled `AD`, Sponsored) links only to the Products that are in the feed there. Not an Ad never shows. Items come in source order, ready for ranking (#16). Cursors are opaque and only continue the same country, category and search. Clear 400 errors cover a missing or bad country, an unsupported category, a bad cursor and `sessionId` (Shopping Sessions come with #19). A failing source returns a JSON 500. CORS preflight is answered.
+- **`GET /functions/v1/feed?country=GB&category=bags&q=tote&cursor=…`** (the spec's `/v1/feed`) returns `{items, nextCursor, servesSampleData}`. It holds only Ads (ADR-0002): each Affiliate Ad shows one chosen Offer (the first in-stock one that earns), and each Brand Ad (labelled `AD`, Sponsored) links only to the Products that are in the feed there. Not an Ad never shows. Items are ordered by the TypeScript ranking (#16, below). Cursors are opaque and only continue the same country, category and search. Clear 400 errors cover a missing or bad country, an unsupported category, a bad cursor and `sessionId` (Shopping Sessions come with #19). A failing source returns a JSON 500. CORS preflight is answered.
 - **Checks** (run in `supabase/`): `npm ci`, then `npm run typecheck` (tsc, strict), `npm run lint` (ESLint + typescript-eslint) and `npm test` (Vitest, 36 tests). The API tests call the real handlers with the Fixture source. The migration tests apply every migration to PGlite, an in-process Postgres, so no project, Docker or secret is needed: clean apply, tables with RLS on, prohibited categories, the whole Fixture catalog loading, constraints refusing bad Offers, cascading deletes, `updated_at`.
 - **New CI job `backend`** (`CI / backend (pull_request)`) runs those three checks on Node 20. **It isn't a required check yet**, so a red `backend` wouldn't stop auto-merge. The orchestrator doesn't edit branch protection; to make it required, add `{"context": "backend", "app_id": 15368}` with the existing checks (see "Main protection & auto-merge" below).
 - For you to know:
@@ -181,6 +182,17 @@ _Last updated: 2026-11-14_ · "Stafeed" is a working name.
   - `npm audit` reports 7 moderate advisories, all in ESLint's dev-only dependencies. Nothing ships to the app or the functions.
   - The function code uses `.ts` import paths and a JSON import, so the same files run on Deno (Supabase) and under Node (tests). It hasn't been run on Deno or deployed yet (no project, and Deno isn't installed on this PC).
 - Choices made by the orchestrator: Node 20 + Vitest + PGlite instead of Deno or local Supabase for the checks; offset-in-cursor paging like the app's Fixture gateway; the error codes; the shape of `/v1/config`; a JSON copy of the Fixtures guarded by a Flutter test, instead of one shared file (the app's Fixtures stay Dart, so no golden or app test changes).
+
+## Ranking in TypeScript (#16)
+- **Ranking module** `supabase/functions/_shared/ranking.ts`: the same rules as the app's Dart ranking, written line for line (retrieval, weighted score, best first, never the same Brand twice in a row, exploration slots). For You only takes Ads; Not an Ad only shows inside a Shopping Session; a Brand Ad in a session needs a Product matching the goal.
+- **Every shared scenario passes** (`shared/ranking/scenarios.json`, all 12), run by `supabase/tests/ranking_scenarios.test.ts`, the TypeScript twin of the Dart scenario test.
+- **Weights in config**: `supabase/functions/_shared/ranking_config.ts`, a copy of `shared/ranking/ranking_config.json` (a test fails when they differ). It's a copy so the deployed function only needs files inside `supabase/functions/`. Change the weights in the shared file, the Dart config and this file together.
+- **The feed endpoint ranks with it.** `GET /v1/feed` now hands every candidate (Ads, Not an Ad and out-of-stock Products) to the ranking, which keeps For You to in-stock Ads and orders them. Two new API tests: the Brand rule across pages, and Not an Ad / out of stock ranked out of For You.
+- For you to know:
+  - The backend doesn't know the Shopper yet (#17), so it ranks with no interests, taste or Not interested set. Today that means the source's order with the Brand rule applied. Once Shoppers have a backend identity, their taste plugs straight into the same call.
+  - Shopping Sessions on the backend come with #19; the ranking already handles them (tested by the shared scenarios), so #19 only has to pass the session in.
+  - Sources don't score their items yet, so every candidate counts as equally relevant (as in the app).
+- Checks: `npm run typecheck`, `npm run lint`, `npm test` (53 tests). No Dart changed.
 
 ## Pay-per-click shopping networks research (#26)
 - File: `docs/research/ppc-shopping-networks.md`. Every claim links to its source (all read 2026-11-14). Secondary sources and search-engine summaries are marked as such.

@@ -8,7 +8,7 @@ import type { FeedItem } from '../functions/_shared/domain.ts';
 import { createFeedHandler } from '../functions/_shared/feed_handler.ts';
 import { FixtureSource } from '../functions/_shared/fixture_source.ts';
 import fixtures from '../functions/_shared/fixtures/fixtures.json' with { type: 'json' };
-import { inMemorySource, product } from './support/in_memory_source.ts';
+import { inMemorySource, offer, product } from './support/in_memory_source.ts';
 
 interface FeedBody {
   items: FeedItem[];
@@ -215,6 +215,32 @@ describe('GET /v1/feed', () => {
     const b = inMemorySource({ id: 'b', products: [product('two'), product('three')] });
     const items = await allItems(feed([a, b], 2), { country: 'US' });
     expect(items.map((item) => item.id)).toEqual(['one', 'two', 'three']);
+  });
+
+  it('ranks For You: never the same Brand twice in a row while another is left', async () => {
+    const source = inMemorySource({
+      products: [
+        product('n1', { brand: 'Northstar' }),
+        product('n2', { brand: 'Northstar' }),
+        product('n3', { brand: 'Northstar' }),
+        product('k1', { brand: 'Kestrel' }),
+        product('k2', { brand: 'Kestrel' }),
+      ],
+    });
+    const items = await allItems(feed([source], 2), { country: 'US' });
+    expect(items.map((item) => item.id)).toEqual(['n1', 'k1', 'n2', 'k2', 'n3']);
+  });
+
+  it('ranks Not an Ad and out-of-stock Products out of For You', async () => {
+    const source = inMemorySource({
+      products: [
+        product('free', { offers: [offer({ id: 'o-free', monetisation: 'none' })] }),
+        product('gone', { offers: [offer({ id: 'o-gone', availability: 'out_of_stock' })] }),
+        product('ad'),
+      ],
+    });
+    const items = await allItems(feed([source]), { country: 'US' });
+    expect(items.map((item) => item.id)).toEqual(['ad']);
   });
 
   it('answers a failing source with the usual JSON error shape', async () => {

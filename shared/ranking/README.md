@@ -1,8 +1,9 @@
 # Shared ranking scenarios
 
-The ranking (spec Seam 3) is written twice: in Dart for the Fixture data gateway (`lib/app/features/ranking/ranking.dart`, ticket #10) and in TypeScript for the backend (ticket #15). Both must pass every scenario in `scenarios.json`, with the weights in `ranking_config.json`. Change a rule here first; then both implementations follow.
+The ranking (spec Seam 3) is written twice: in Dart for the Fixture data gateway (`lib/app/features/ranking/ranking.dart`, ticket #10) and in TypeScript for the backend (`supabase/functions/_shared/ranking.ts`, ticket #16). Both must pass every scenario in `scenarios.json`, with the weights in `ranking_config.json`. Change a rule here first; then both implementations follow.
 
 - Dart runs them in `test/features/ranking/ranking_scenarios_test.dart`, which also checks that the app's built-in weights (`defaultRankingConfig`) equal `ranking_config.json`.
+- TypeScript runs them in `supabase/tests/ranking_scenarios.test.ts` (`npm test` in `supabase/`), which also checks that the backend's built-in weights (`supabase/functions/_shared/ranking_config.ts`) equal `ranking_config.json`.
 
 ## `ranking_config.json`
 
